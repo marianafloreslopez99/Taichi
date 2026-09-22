@@ -41,6 +41,6 @@ sequenceDiagram
 - Los adaptadores mock centralizan retrasos y ejemplos. La UI no simula cada etapa por su cuenta.
 - `speechSynthesis` del navegador es una mejora progresiva: su fallo no bloquea texto ni navegación.
 - Express y Prisma persisten rutinas, sesiones anónimas y preguntas; el frontend conserva solo un `sessionId` opaco en `localStorage`.
-- PostgreSQL se levanta localmente mediante Docker Compose y las migraciones son versionadas.
+- MySQL se consume como servicio administrado y las migraciones son versionadas con Prisma.
 
 La inversión de dependencias se aplica en los puertos de aplicación; la composición inyecta adaptadores. Responsabilidad única: el motor modifica estado, el flujo coordina IA, las páginas componen experiencia. DRY se aplica a tokens y componentes de acciones; se evita una jerarquía genérica que complique el MVP.

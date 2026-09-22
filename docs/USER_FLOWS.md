@@ -10,7 +10,7 @@ flowchart LR
   D --> B
 ```
 
-La selección crea una sesión persistida en PostgreSQL y abre el primer movimiento. El usuario controla el avance manualmente; no hay avance automático. En la última tarjeta, la acción “Finalizar práctica” cierra la sesión y abre el resumen.
+La selección crea una sesión persistida en MySQL y abre el primer movimiento. El usuario controla el avance manualmente; no hay avance automático. En la última tarjeta, la acción “Finalizar práctica” cierra la sesión y abre el resumen.
 
 ```mermaid
 flowchart TD

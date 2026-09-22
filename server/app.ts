@@ -23,7 +23,10 @@ export function createApp() {
   const app = express()
   app.use(express.json({ limit: '100kb' }))
 
-  app.get('/health', (_request, response) => response.json({ ok: true }))
+  app.get('/health', asyncRoute(async (_request, response) => {
+    await prisma.$queryRaw`SELECT 1`
+    response.json({ ok: true })
+  }))
 
   const api = express.Router()
   api.get('/routines', asyncRoute(async (_request, response) => response.json({ data: await listRoutines(prisma) })))
@@ -55,9 +58,17 @@ export function createApp() {
     await deleteSession(prisma, sessionId)
     response.status(204).send()
   }))
+  api.use((_request, response) => {
+    response.status(404).json({
+      error: { code: 'API_ROUTE_NOT_FOUND', message: 'Ruta de API no encontrada.' },
+    })
+  })
   app.use('/api/v1', api)
 
-  app.get('/internal/v1/health', requireServiceKey, (_request, response) => response.json({ ok: true }))
+  app.get('/internal/v1/health', requireServiceKey, asyncRoute(async (_request, response) => {
+    await prisma.$queryRaw`SELECT 1`
+    response.json({ ok: true })
+  }))
   app.use(errorHandler)
   return app
 }

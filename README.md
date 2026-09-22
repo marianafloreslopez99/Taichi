@@ -1,6 +1,6 @@
 # Taichi · Un momento para volver a ti
 
-Aplicación web de acompañamiento para practicar rutinas de taichí con instrucciones visibles y narradas. Incluye tres rutinas persistidas en PostgreSQL, sesiones anónimas y un recorrido simulado de pregunta por voz (STT → LLM → TTS).
+Aplicación web de acompañamiento para practicar rutinas de taichí con instrucciones visibles y narradas. Incluye tres rutinas persistidas en MySQL, sesiones anónimas y un recorrido simulado de pregunta por voz (STT → LLM → TTS).
 
 ## Inicio
 
@@ -11,14 +11,13 @@ npm install
 npm run dev
 ```
 
-Para levantar PostgreSQL local, aplicar migraciones y cargar las rutinas:
+Copie `.env.example` como `.env`, configure `DATABASE_URL` con una base MySQL y ejecute:
 
 ```bash
 npm run db:setup
 ```
 
-Requiere Docker Desktop con Docker Compose. El backend se inicia con
-`npm run dev:server` y Vite reenvía `/api` hacia él.
+Este comando aplica las migraciones versionadas y carga las rutinas iniciales. El backend se inicia con `npm run dev:server` y Vite reenvía `/api` hacia él.
 
 El inventario de dependencias está en [requirements.txt](requirements.txt). Para una instalación exacta usa `package-lock.json`; `requirements.txt` sirve como referencia y como lista de futuras incorporaciones, ya que npm no instala directamente desde archivos `.txt`.
 

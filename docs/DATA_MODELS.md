@@ -1,6 +1,6 @@
 # Modelos de datos
 
-Las interfaces de dominio viven en `src/domain/models.ts`; la persistencia PostgreSQL está definida en `prisma/schema.prisma`. IDs son cadenas estables; fechas se intercambian con la API como marcas de tiempo numéricas. Las duraciones de movimiento/rutina están en segundos/minutos respectivamente, según nombre del campo.
+Las interfaces de dominio viven en `src/domain/models.ts`; la persistencia MySQL está definida en `prisma/schema.prisma`. IDs son cadenas estables; fechas se intercambian con la API como marcas de tiempo numéricas. Las duraciones de movimiento/rutina están en segundos/minutos respectivamente, según nombre del campo.
 
 | Modelo            | Campos                                                                                         | Invariantes                              |
 | ----------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------- |

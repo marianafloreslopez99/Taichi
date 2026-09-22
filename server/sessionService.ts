@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { PrismaClient } from '@prisma/client'
+import { Prisma, type PrismaClient } from '@prisma/client'
 import type { SessionStatus } from '../src/domain/models.js'
 import { HttpError } from './http.js'
 import { routineInclude, serializeRoutine, serializeSession } from './serializers.js'
@@ -19,9 +19,9 @@ type SessionRecord = Awaited<ReturnType<PrismaClient['session']['findUniqueOrThr
   }>
 }
 
-function elapsedNow(session: Pick<SessionRecord, 'status' | 'startedAt' | 'elapsedSeconds'>) {
+function elapsedNow(session: Pick<SessionRecord, 'status' | 'updatedAt' | 'elapsedSeconds'>) {
   if (session.status !== 'PLAYING') return session.elapsedSeconds
-  return session.elapsedSeconds + Math.max(0, Math.floor((Date.now() - session.startedAt.getTime()) / 1000))
+  return session.elapsedSeconds + Math.max(0, Math.floor((Date.now() - session.updatedAt.getTime()) / 1000))
 }
 
 function transitionError(message: string) {
@@ -31,8 +31,11 @@ function transitionError(message: string) {
 async function getSession(prisma: PrismaClient, id: string) {
   try {
     return await prisma.session.findUniqueOrThrow({ where: { id }, include: sessionInclude })
-  } catch {
-    throw new HttpError(404, 'SESSION_NOT_FOUND', 'Sesión no encontrada.')
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      throw new HttpError(404, 'SESSION_NOT_FOUND', 'Sesión no encontrada.')
+    }
+    throw error
   }
 }
 
@@ -41,7 +44,7 @@ async function saveElapsed(prisma: PrismaClient, session: SessionRecord) {
   if (elapsedSeconds === session.elapsedSeconds || session.status !== 'PLAYING') return session
   return prisma.session.update({
     where: { id: session.id },
-    data: { elapsedSeconds, startedAt: new Date() },
+    data: { elapsedSeconds },
     include: sessionInclude,
   })
 }
@@ -87,14 +90,14 @@ export async function transitionSession(
   const initial = await getSession(prisma, id)
   const session = await saveElapsed(prisma, initial)
   const movementCount = await prisma.movement.count({ where: { routineId: session.routineId } })
-  let data: { status?: SessionStatus; currentMovementIndex?: number; completedAt?: Date | null; elapsedSeconds: number; startedAt?: Date }
+  let data: { status?: SessionStatus; currentMovementIndex?: number; completedAt?: Date | null; elapsedSeconds: number }
 
   if (action === 'pause') {
     if (session.status !== 'PLAYING') throw transitionError('Solo se puede pausar una sesión en reproducción.')
     data = { status: 'PAUSED', elapsedSeconds: elapsedNow(session) }
   } else if (action === 'resume') {
     if (session.status !== 'PAUSED') throw transitionError('Solo se puede continuar una sesión pausada.')
-    data = { status: 'PLAYING', startedAt: new Date(), elapsedSeconds: session.elapsedSeconds }
+    data = { status: 'PLAYING', elapsedSeconds: session.elapsedSeconds }
   } else if (action === 'next') {
     if (!['PLAYING', 'PAUSED'].includes(session.status) || session.currentMovementIndex >= movementCount - 1) {
       throw transitionError('No se puede avanzar desde este estado o movimiento.')
@@ -120,10 +123,7 @@ export async function transitionSession(
 
   const updated = await prisma.session.update({
     where: { id },
-    data: {
-      ...data,
-      ...(action === 'resume' ? { startedAt: new Date() } : {}),
-    },
+    data,
     include: sessionInclude,
   })
   return serializeSession(updated)

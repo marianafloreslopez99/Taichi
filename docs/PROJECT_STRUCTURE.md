@@ -7,7 +7,7 @@ src/
   application/         puertos y orquestación de pregunta
   infrastructure/      rutinas y adaptadores mock
 server/                API Express, Prisma, validación y seed
-prisma/                esquema y migraciones PostgreSQL
+prisma/                esquema y migraciones MySQL
   presentation/        páginas, componentes y hooks
   styles/              tokens, base, componentes y páginas
   test/                configuración de pruebas de interfaz
