@@ -5,9 +5,9 @@
 #
 #   npm install
 #
-# Requisitos de desarrollo local: Docker Desktop (incluye Docker Compose) y
-# Node.js 22.12+. Para crear PostgreSQL, migrar el esquema y cargar las
-# rutinas iniciales ejecuta `npm run db:setup`.
+# Requisito de desarrollo local: Node.js 22.12+. Configura una base MySQL en
+# `.env`; para migrar el esquema y cargar las rutinas iniciales ejecuta
+# `npm run db:setup`.
 #
 # Para instalar manualmente desde esta lista, ejecuta los dos comandos npm
 # que aparecen abajo. Mantén package.json y este archivo sincronizados cuando

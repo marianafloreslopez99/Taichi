@@ -1,6 +1,6 @@
 # Documentación técnica
 
-Taichi es una aplicación educativa para guiar rutinas de movimiento con apoyo de voz. La Fase 2 añade un backend Express, PostgreSQL y sesiones anónimas persistentes. La voz del navegador lee instrucciones cuando está disponible; los adaptadores de IA siguen simulando STT, respuesta y TTS con retrasos visibles. La transcripción de ejemplo aparece como texto y nunca se captura audio del micrófono en esta fase.
+Taichi es una aplicación educativa para guiar rutinas de movimiento con apoyo de voz. La Fase 2 añade un backend Express, MySQL y sesiones anónimas persistentes. La voz del navegador lee instrucciones cuando está disponible; los adaptadores de IA siguen simulando STT, respuesta y TTS con retrasos visibles. La transcripción de ejemplo aparece como texto y nunca se captura audio del micrófono en esta fase.
 
 ## Mapa de lectura
 
