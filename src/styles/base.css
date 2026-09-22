@@ -1,0 +1,152 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--cream);
+  color: var(--ink);
+  font: 400 18px/1.65 var(--font-body);
+}
+button,
+input {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+p,
+h1,
+h2,
+h3 {
+  margin-top: 0;
+}
+h1,
+h2,
+h3 {
+  font-weight: 400;
+}
+h1,
+h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+}
+h3 {
+  font-family: var(--font-display);
+  line-height: 1.15;
+}
+em {
+  font-weight: 400;
+}
+:focus-visible {
+  outline: 4px solid var(--clay);
+  outline-offset: 5px;
+}
+::selection {
+  background: var(--sage);
+  color: var(--paper);
+}
+.container {
+  width: min(100% - 40px, 1320px);
+  margin-inline: auto;
+}
+.site-shell {
+  min-height: 100vh;
+  overflow: clip;
+}
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 100;
+  padding: 14px 20px;
+  font-size: 18px;
+  background: var(--forest);
+  color: var(--paper);
+}
+.skip-link:focus {
+  top: 12px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--sage-deep);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.eyebrow-line {
+  display: inline-block;
+  width: 27px;
+  height: 1px;
+  background: var(--sage-deep);
+}
+.page-spacing {
+  padding-block: 48px 96px;
+}
+.page-intro {
+  max-width: 700px;
+  margin: 24px 0 48px;
+}
+.page-intro h1 {
+  font-size: clamp(58px, 7vw, 94px);
+  margin: 20px 0 18px;
+}
+.page-intro h1 em,
+.prep-copy h1 em,
+.summary-page h1 em,
+.hero h1 em {
+  color: var(--sage-deep);
+}
+.page-intro p {
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1.55;
+  max-width: 620px;
+}
+.empty-state {
+  min-height: 55vh;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+.empty-state h1 {
+  font-size: clamp(42px, 6vw, 70px);
+  margin-bottom: 12px;
+}
+.empty-state p {
+  color: var(--muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

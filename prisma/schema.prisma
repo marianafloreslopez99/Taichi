@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Difficulty {
+  Principiante
+  Intermedio
+}
+
+enum SessionStatus {
+  PLAYING
+  PAUSED
+  ASKING
+  COMPLETED
+}
+
+model Routine {
+  id              String     @id
+  name            String
+  description     String
+  difficulty      Difficulty
+  estimatedMinutes Int
+  category        String
+  movements       Movement[]
+  sessions        Session[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+model Movement {
+  id              String   @id
+  routineId       String
+  order           Int
+  name            String
+  description     String
+  instruction     String
+  durationSeconds Int
+  tips            Json
+  visual          String
+  routine         Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  questions       AIQuestion[]
+
+  @@unique([routineId, order])
+  @@index([routineId])
+}
+
+model Session {
+  id                  String        @id
+  routineId           String
+  currentMovementIndex Int           @default(0)
+  status              SessionStatus  @default(PLAYING)
+  startedAt           DateTime
+  completedAt         DateTime?
+  elapsedSeconds      Int           @default(0)
+  routine             Routine       @relation(fields: [routineId], references: [id], onDelete: Restrict)
+  questions           AIQuestion[]
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([routineId])
+  @@index([status])
+}
+
+model AIQuestion {
+  id         String   @id
+  sessionId  String
+  movementId String
+  question   String
+  answer     String
+  createdAt  DateTime @default(now())
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  movement   Movement @relation(fields: [movementId], references: [id], onDelete: Restrict)
+
+  @@index([sessionId])
+}

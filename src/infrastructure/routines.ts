@@ -1,0 +1,182 @@
+import type { Movement, Routine } from '../domain/models'
+
+const movement = (
+  id: string,
+  order: number,
+  name: string,
+  description: string,
+  instruction: string,
+  visual: Movement['visual'],
+  tips: string[],
+): Movement => ({
+  id,
+  order,
+  name,
+  description,
+  instruction,
+  durationSeconds: 60,
+  visual,
+  tips,
+})
+
+export const routines: Routine[] = [
+  {
+    id: 'fundamentos',
+    name: 'Fundamentos de taichí',
+    description:
+      'Una introducción suave para conectar respiración, equilibrio y movimiento consciente.',
+    difficulty: 'Principiante',
+    estimatedMinutes: 8,
+    category: 'Para empezar',
+    movements: [
+      movement(
+        'f-apertura',
+        1,
+        'La apertura',
+        'Encuentra una postura cómoda y presente.',
+        'Separa los pies al ancho de los hombros. Suelta los brazos y toma una respiración lenta. Siente el peso repartido entre ambos pies.',
+        'opening',
+        ['Mantén las rodillas suaves.', 'Deja caer los hombros.'],
+      ),
+      movement(
+        'f-nube',
+        2,
+        'Manos como nubes',
+        'Deja que los brazos sigan el ritmo del aire.',
+        'Eleva las manos suavemente frente al pecho. Muévelas de lado a lado como nubes que cruzan el cielo, mientras el peso cambia de un pie al otro.',
+        'cloud',
+        ['Mira hacia la mano que avanza.', 'No fuerces los hombros.'],
+      ),
+      movement(
+        'f-arbol',
+        3,
+        'Abrazar el árbol',
+        'Cultiva estabilidad sin rigidez.',
+        'Redondea los brazos frente a ti como si abrazaras un árbol. Respira con naturalidad y permite que el cuerpo se mantenga estable y ligero.',
+        'tree',
+        ['Afloja los dedos.', 'Mantén el cuello largo.'],
+      ),
+      movement(
+        'f-cierre',
+        4,
+        'El cierre',
+        'Termina con calma y gratitud.',
+        'Baja las manos lentamente. Junta la atención en tu respiración y observa cómo se siente tu cuerpo al terminar.',
+        'closing',
+        ['No tengas prisa.', 'Reconoce tu esfuerzo.'],
+      ),
+    ],
+  },
+  {
+    id: 'relajacion',
+    name: 'Fluir y soltar',
+    description:
+      'Un espacio breve para liberar tensión y volver al centro, incluso en días ocupados.',
+    difficulty: 'Principiante',
+    estimatedMinutes: 6,
+    category: 'Para relajarte',
+    movements: [
+      movement(
+        'r-respiracion',
+        1,
+        'Respirar y llegar',
+        'Haz una pausa antes de moverte.',
+        'Coloca una mano sobre el abdomen. Inhala por la nariz y exhala lentamente. Permite que cada exhalación suavice los hombros.',
+        'breath',
+        ['Respira sin forzar.', 'Siente el suelo bajo los pies.'],
+      ),
+      movement(
+        'r-olas',
+        2,
+        'Olas suaves',
+        'Acompaña el movimiento con el aliento.',
+        'Dobla ligeramente las rodillas al exhalar. Al inhalar, deja que los brazos suban como una ola; al exhalar, bájalos sin esfuerzo.',
+        'wave',
+        [
+          'Deja el movimiento pequeño si lo necesitas.',
+          'Evita bloquear las rodillas.',
+        ],
+      ),
+      movement(
+        'r-nubes',
+        3,
+        'Nubes lentas',
+        'Despeja el espacio a tu alrededor.',
+        'Lleva las manos suavemente hacia un lado y luego hacia el otro. Sigue un ritmo cómodo, como si apartaras nubes ligeras.',
+        'cloud',
+        ['Mantén la mirada suave.', 'El peso cambia poco a poco.'],
+      ),
+      movement(
+        'r-cierre',
+        4,
+        'Volver al centro',
+        'Observa la quietud que queda.',
+        'Deja descansar los brazos a los lados. Toma una última respiración profunda y vuelve a la postura natural.',
+        'closing',
+        ['Relaja la mandíbula.', 'Permanece un momento en quietud.'],
+      ),
+    ],
+  },
+  {
+    id: 'manana',
+    name: 'Despertar de la mañana',
+    description:
+      'Activa tu energía con una secuencia amable para empezar el día con intención.',
+    difficulty: 'Intermedio',
+    estimatedMinutes: 10,
+    category: 'Para activar',
+    movements: [
+      movement(
+        'm-apertura',
+        1,
+        'Saludar al día',
+        'Abre espacio para una nueva mañana.',
+        'Con los pies separados, eleva los brazos al inhalar y bájalos lentamente al exhalar. Mantén los movimientos fluidos.',
+        'opening',
+        ['Suelta los hombros.', 'Mueve los brazos a tu ritmo.'],
+      ),
+      movement(
+        'm-arbol',
+        2,
+        'Raíces firmes',
+        'Encuentra equilibrio desde el suelo.',
+        'Flexiona ligeramente las rodillas y redondea los brazos frente al torso. Imagina que tus pies echan raíces mientras la espalda crece.',
+        'tree',
+        ['Reparte tu peso.', 'Respira sin retener el aire.'],
+      ),
+      movement(
+        'm-olas',
+        3,
+        'Empujar el agua',
+        'Coordina el peso con las manos.',
+        'Lleva el peso hacia delante con suavidad mientras empujas las palmas. Regresa al centro y deja que los brazos vuelvan contigo.',
+        'wave',
+        ['Da pasos cortos si hace falta.', 'No fuerces la rodilla delantera.'],
+      ),
+      movement(
+        'm-nubes',
+        4,
+        'Cruzar las nubes',
+        'Invita a la fluidez.',
+        'Mueve las manos en círculos amplios y lentos. Cambia el peso de lado a lado y acompaña con la mirada.',
+        'cloud',
+        ['Mantén el torso erguido.', 'La fluidez vale más que la amplitud.'],
+      ),
+      movement(
+        'm-cierre',
+        5,
+        'Guardar la energía',
+        'Lleva la atención de vuelta al centro.',
+        'Acerca lentamente las manos al abdomen. Baja los brazos, respira y observa la energía con la que comenzarás el día.',
+        'closing',
+        [
+          'Deja que la respiración se acomode.',
+          'Termina cuando te sientas listo.',
+        ],
+      ),
+    ],
+  },
+]
+
+export const getRoutine = (id: string | undefined) =>
+  routines.find((routine) => routine.id === id)

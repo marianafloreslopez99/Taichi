@@ -1,0 +1,60 @@
+# Taichi — dependencias del frontend
+#
+# Este archivo es una referencia legible para mantener el inventario de
+# dependencias. La instalación reproducible se hace con package-lock.json:
+#
+#   npm install
+#
+# Requisitos de desarrollo local: Docker Desktop (incluye Docker Compose) y
+# Node.js 22.12+. Para crear PostgreSQL, migrar el esquema y cargar las
+# rutinas iniciales ejecuta `npm run db:setup`.
+#
+# Para instalar manualmente desde esta lista, ejecuta los dos comandos npm
+# que aparecen abajo. Mantén package.json y este archivo sincronizados cuando
+# agregues o elimines una dependencia.
+
+## Dependencias de ejecución
+react@^19.3.0
+react-dom@^19.3.0
+react-router@^8.4.0
+express@^5.2.1
+@prisma/client@^6.19.0
+@tanstack/react-query@^5.103.2
+zod@^4.6.5
+
+## Dependencias de desarrollo
+@eslint/js@^10.0.1
+@testing-library/jest-dom@^7.0.1
+@testing-library/dom@^10.4.1
+@testing-library/react@^16.3.3
+@testing-library/user-event@^14.6.7
+@types/node@^22.20.3
+@types/react@^19.3.0
+@types/react-dom@^19.3.0
+@vitejs/plugin-react@^6.1.1
+eslint@^10.10.0
+eslint-plugin-react-hooks@^7.1.1
+eslint-plugin-react-refresh@^0.5.7
+globals@^17.12.0
+jsdom@^30.1.0
+prettier@^3.9.7
+@types/express@^5.0.6
+prisma@^6.19.0
+tsx@^4.23.15
+typescript@^6.0.3
+typescript-eslint@^8.70.0
+vite@^8.3.0
+vitest@^5.0.1
+
+## Instalación manual equivalente
+# npm install react react-dom react-router
+# npm install --save-dev vite @vitejs/plugin-react typescript vitest jsdom @testing-library/react @testing-library/user-event @testing-library/jest-dom @types/react @types/react-dom @types/node eslint @eslint/js typescript-eslint eslint-plugin-react-hooks eslint-plugin-react-refresh globals prettier
+
+## Futuras integraciones (no instalar en el MVP)
+# @tanstack/react-query       # datos remotos cuando exista backend
+# zod                         # validación de respuestas de API
+# msw                         # mocks de red para pruebas de integración
+# playwright                  # pruebas end-to-end en navegador
+# proveedor STT               # añadir solo al definir backend y proveedor
+# proveedor LLM               # mantener la llamada detrás de AIQuestionService
+# proveedor TTS               # mantener la llamada detrás de TextToSpeechService
