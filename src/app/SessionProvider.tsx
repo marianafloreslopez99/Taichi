@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { AIQuestion, PracticeSession, Routine } from '../domain/models'
+import type { PracticeSession, Routine } from '../domain/models'
 import { sessionReducer } from '../domain/sessionMachine'
 import { ApiError, api } from '../infrastructure/api/client'
 
@@ -20,7 +20,7 @@ interface SessionContextValue {
   previous: () => Promise<void>
   ask: () => Promise<void>
   closeQuestion: () => Promise<void>
-  addQuestion: (question: AIQuestion) => Promise<void>
+  refresh: () => Promise<void>
   complete: () => Promise<void>
   clear: () => Promise<void>
 }
@@ -29,7 +29,9 @@ const SessionContext = createContext<SessionContextValue | null>(null)
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, dispatch] = useReducer(sessionReducer, null)
-  const [pendingSession, setPendingSession] = useState<PracticeSession | null>(null)
+  const [pendingSession, setPendingSession] = useState<PracticeSession | null>(
+    null,
+  )
   const [isLoading, setIsLoading] = useState(true)
   const activeSession = pendingSession ?? session
   const sessionId = activeSession?.id
@@ -40,15 +42,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setIsLoading(false)
       return
     }
-    void api.getSession(storedId).then((remoteSession) => {
-      dispatch({ type: 'HYDRATE', session: remoteSession })
-    }).catch((error: unknown) => {
-      if (error instanceof ApiError && error.status === 404) {
-        window.localStorage.removeItem('taichi.sessionId')
-      }
-    }).finally(() => {
-      setIsLoading(false)
-    })
+    void api
+      .getSession(storedId)
+      .then((remoteSession) => {
+        dispatch({ type: 'HYDRATE', session: remoteSession })
+      })
+      .catch((error: unknown) => {
+        if (error instanceof ApiError && error.status === 404) {
+          window.localStorage.removeItem('taichi.sessionId')
+        }
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }, [])
 
   useEffect(() => {
@@ -58,7 +64,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [session?.status])
 
   useEffect(() => {
-    if (pendingSession && session?.id === pendingSession.id) setPendingSession(null)
+    if (pendingSession && session?.id === pendingSession.id)
+      setPendingSession(null)
   }, [pendingSession, session?.id])
 
   const sync = async (action: Parameters<typeof api.transition>[1]) => {
@@ -81,18 +88,32 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
       return remoteSession
     },
-    pause: async () => { await sync('pause') },
-    resume: async () => { await sync('resume') },
-    next: async () => { await sync('next') },
-    previous: async () => { await sync('previous') },
-    ask: async () => { await sync('ask') },
-    closeQuestion: async () => { await sync('close-question') },
-    addQuestion: async (question) => {
+    pause: async () => {
+      await sync('pause')
+    },
+    resume: async () => {
+      await sync('resume')
+    },
+    next: async () => {
+      await sync('next')
+    },
+    previous: async () => {
+      await sync('previous')
+    },
+    ask: async () => {
+      await sync('ask')
+    },
+    closeQuestion: async () => {
+      await sync('close-question')
+    },
+    refresh: async () => {
       if (!sessionId) return
-      const remoteSession = await api.addQuestion(sessionId, question)
+      const remoteSession = await api.getSession(sessionId)
       dispatch({ type: 'HYDRATE', session: remoteSession })
     },
-    complete: async () => { await sync('complete') },
+    complete: async () => {
+      await sync('complete')
+    },
     clear: async () => {
       if (sessionId) await api.deleteSession(sessionId).catch(() => undefined)
       window.localStorage.removeItem('taichi.sessionId')

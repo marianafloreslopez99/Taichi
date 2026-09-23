@@ -27,6 +27,7 @@ interface InteractionInput {
 interface InteractionOptions {
   timeout_ms: number
   signal?: AbortSignal
+  retries: { strategy: 'none' }
 }
 
 type CreateInteraction = (
@@ -91,7 +92,11 @@ export class GeminiQuestionService implements ServerAIQuestionService {
           },
           store: false,
         },
-        { timeout_ms: env.GEMINI_TIMEOUT_MS, signal },
+        {
+          timeout_ms: env.GEMINI_TIMEOUT_MS,
+          signal,
+          retries: { strategy: 'none' },
+        },
       )
       const text = interaction.output_text?.trim()
       if (!text) {

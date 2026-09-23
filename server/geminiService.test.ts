@@ -38,7 +38,10 @@ describe('GeminiQuestionService', () => {
         input: expect.stringContaining('¿Cómo debo respirar?'),
         store: false,
       }),
-      expect.objectContaining({ timeout_ms: expect.any(Number) }),
+      expect.objectContaining({
+        timeout_ms: expect.any(Number),
+        retries: { strategy: 'none' },
+      }),
     )
   })
 

@@ -22,20 +22,15 @@ import {
   transitionSession,
 } from './sessionService.js'
 
-const routineIdParams = z.object({ routineId: z.string().min(1) })
-const sessionIdParams = z.object({ sessionId: z.string().uuid() })
-const createSessionBody = z.object({
+const routineIdParams = z.strictObject({ routineId: z.string().min(1) })
+const sessionIdParams = z.strictObject({ sessionId: z.string().uuid() })
+const createSessionBody = z.strictObject({
   routineId: z.string().min(1),
   replaceSessionId: z.string().uuid().optional(),
 })
-const questionBody = z.object({
+const createQuestionBody = z.strictObject({
   movementId: z.string().min(1),
   question: z.string().trim().min(1).max(2000),
-  answer: z.string().trim().min(1).max(5000),
-})
-const answerQuestionBody = questionBody.pick({
-  movementId: true,
-  question: true,
 })
 
 function createQuestionRateLimiter(maxRequests = 5, windowMs = 10 * 60_000) {
@@ -77,6 +72,7 @@ export function createApp(
   const aiQuestionService =
     dependencies.aiQuestionService ?? new GeminiQuestionService()
   const consumeQuestionQuota = createQuestionRateLimiter()
+  app.disable('x-powered-by')
   app.use(express.json({ limit: '100kb' }))
 
   app.get(
@@ -88,6 +84,11 @@ export function createApp(
   )
 
   const api = express.Router()
+  api.use((_request, response, next) => {
+    response.setHeader('Cache-Control', 'no-store')
+    response.setHeader('X-Content-Type-Options', 'nosniff')
+    next()
+  })
   api.get(
     '/routines',
     asyncRoute(async (_request, response) =>
@@ -105,15 +106,13 @@ export function createApp(
     '/sessions',
     asyncRoute(async (request, response) => {
       const input = params(createSessionBody, request.body)
-      response
-        .status(201)
-        .json({
-          data: await createSession(
-            prisma,
-            input.routineId,
-            input.replaceSessionId,
-          ),
-        })
+      response.status(201).json({
+        data: await createSession(
+          prisma,
+          input.routineId,
+          input.replaceSessionId,
+        ),
+      })
     }),
   )
   api.get(
@@ -146,17 +145,7 @@ export function createApp(
     '/sessions/:sessionId/questions',
     asyncRoute(async (request, response) => {
       const { sessionId } = params(sessionIdParams, request.params)
-      const input = params(questionBody, request.body)
-      response
-        .status(201)
-        .json({ data: await addQuestion(prisma, sessionId, input) })
-    }),
-  )
-  api.post(
-    '/sessions/:sessionId/answer',
-    asyncRoute(async (request, response) => {
-      const { sessionId } = params(sessionIdParams, request.params)
-      const input = params(answerQuestionBody, request.body)
+      const input = params(createQuestionBody, request.body)
       const context = await getQuestionContext(
         prisma,
         sessionId,
@@ -166,9 +155,13 @@ export function createApp(
       consumeQuestionQuota(sessionId)
       const controller = new AbortController()
       request.once('aborted', () => controller.abort())
-      response.json({
-        data: await aiQuestionService.answer(context, controller.signal),
+      const answer = await aiQuestionService.answer(context, controller.signal)
+      await addQuestion(prisma, sessionId, {
+        movementId: input.movementId,
+        question: input.question,
+        answer: answer.text,
       })
+      response.status(201).json({ data: answer })
     }),
   )
   api.delete(

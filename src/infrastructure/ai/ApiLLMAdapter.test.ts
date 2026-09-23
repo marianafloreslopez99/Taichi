@@ -34,7 +34,7 @@ describe('ApiLLMAdapter', () => {
       requiresProfessionalAdvice: false,
     })
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/v1/sessions/00000000-0000-4000-8000-000000000001/answer',
+      '/api/v1/sessions/00000000-0000-4000-8000-000000000001/questions',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({

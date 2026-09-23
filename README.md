@@ -1,6 +1,6 @@
 # Taichi · Un momento para volver a ti
 
-Aplicación web de acompañamiento para practicar taichí con instrucciones visibles y narradas. Incluye siete rutinas ordenadas por grupo, con 32 movimientos persistidos en MySQL, sesiones anónimas y preguntas contextuales respondidas por Gemini (STT simulado → LLM real → TTS del navegador).
+Aplicación web de acompañamiento para practicar taichí con instrucciones visibles y narradas. Incluye siete rutinas ordenadas por grupo, con 32 movimientos persistidos en MySQL, sesiones anónimas y preguntas escritas contextuales respondidas por Gemini 3.8 Flash y narradas por el navegador.
 
 ## Inicio
 
@@ -27,11 +27,11 @@ Abra la URL indicada por Vite. Para verificar: `npm run typecheck`, `npm run lin
 
 Puede elegir entre siete rutinas, recorrer sus movimientos, pausar, repetir la guía, realizar una pregunta contextual a Gemini y consultar el resumen. Al reanudar, la narración comienza desde la primera frase del movimiento actual. La instrucción siempre está disponible como texto si el audio falla. Las sesiones anónimas sobreviven a una recarga mediante un identificador opaco guardado en `localStorage`.
 
-La clave de Gemini y sus llamadas permanecen en el backend; nunca se exponen al navegador. La captura de voz sigue simulada y no hay cuentas ni cámara. La aplicación es educativa y no da diagnósticos médicos. Ante dolor o lesión, detenga la práctica y consulte a un profesional.
+La clave de Gemini, el contexto confiable y la persistencia de respuestas permanecen en el backend; nunca se exponen al navegador. La entrada actual es escrita y no hay cuentas ni cámara. La aplicación es educativa y no da diagnósticos médicos. Ante dolor o lesión, detenga la práctica y consulte a un profesional.
 
 ## Stack y organización
 
-React, TypeScript estricto, Vite, React Router, CSS organizado por tokens/base/componentes/páginas, Vitest, React Testing Library, ESLint y Prettier. `src/domain` contiene reglas puras; `src/application` define contratos y el flujo de preguntas; `src/infrastructure` contiene datos y adaptadores mock; `src/presentation` contiene React. Consulte [la documentación técnica](docs/README.md) para decisiones, modelos, transiciones, pruebas y fases futuras.
+React, TypeScript estricto, Vite, React Router, Express, Prisma, MySQL, Google Gen AI SDK, Vitest, React Testing Library, ESLint y Prettier. `src/domain` contiene reglas puras; `src/application` define contratos y el flujo de preguntas; `src/infrastructure` contiene el cliente API y adaptadores; `src/presentation` contiene React. Consulte [la documentación técnica](docs/README.md) para decisiones, modelos, transiciones, pruebas y fases futuras.
 
 ## Próximas integraciones
 

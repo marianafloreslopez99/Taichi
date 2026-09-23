@@ -34,20 +34,21 @@
 - **BR-013** La pregunta se vincula al movimiento desde el que se inició.
 - **BR-014** La respuesta recibe rutina, movimiento, instrucción, nivel y pregunta.
 - **BR-015** Tras la respuesta, se permanece en el mismo movimiento y el usuario elige continuar.
-- **BR-016** Una transcripción vacía no se envía al LLM.
+- **BR-016** Una pregunta escrita vacía no se envía al LLM.
 - **BR-026** Cerrar la pregunta devuelve la sesión a `PAUSED`; continuar es explícito.
 
 ## Errores
 
-- **BR-017** Un fallo de STT no finaliza la sesión.
+- **BR-017** Un fallo al enviar la pregunta no finaliza la sesión.
 - **BR-018** Un fallo de LLM no finaliza la sesión.
 - **BR-019** Un fallo de TTS conserva la respuesta escrita.
 - **BR-020** Un proveedor se sustituye sin editar las reglas del dominio.
-- **BR-027** La ausencia o denegación de micrófono se traduce en un error recuperable. El mock actual no solicita permiso.
+- **BR-027** La entrada escrita es el mecanismo principal y no requiere permiso de micrófono.
 - **BR-028** Las preguntas de dolor o lesión muestran un aviso educativo y remiten a un profesional; no ofrecen diagnóstico.
 - **BR-035** La clave del proveedor LLM permanece exclusivamente en el backend.
 - **BR-036** Solo se responde sobre el movimiento actual de una sesión en estado `ASKING`.
 - **BR-037** Cada sesión puede solicitar como máximo cinco respuestas de IA por cada diez minutos.
+- **BR-038** Solo el backend puede persistir como respuesta el texto devuelto por el proveedor configurado.
 
 ## Accesibilidad
 

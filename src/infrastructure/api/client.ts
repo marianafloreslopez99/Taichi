@@ -1,5 +1,5 @@
 import type { AIResponse } from '../../application/ports'
-import type { AIQuestion, PracticeSession, Routine } from '../../domain/models'
+import type { PracticeSession, Routine } from '../../domain/models'
 
 const apiBase = '/api/v1'
 
@@ -57,22 +57,13 @@ export const api = {
     request<PracticeSession>(`/sessions/${sessionId}/${action}`, {
       method: 'POST',
     }),
-  addQuestion: (sessionId: string, question: AIQuestion) =>
-    request<PracticeSession>(`/sessions/${sessionId}/questions`, {
-      method: 'POST',
-      body: JSON.stringify({
-        movementId: question.movementId,
-        question: question.question,
-        answer: question.answer,
-      }),
-    }),
-  answerQuestion: (
+  createQuestion: (
     sessionId: string,
     movementId: string,
     question: string,
     signal?: AbortSignal,
   ) =>
-    request<AIResponse>(`/sessions/${sessionId}/answer`, {
+    request<AIResponse>(`/sessions/${sessionId}/questions`, {
       method: 'POST',
       body: JSON.stringify({ movementId, question }),
       signal,

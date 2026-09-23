@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   runQuestionFlow,
+  runTextQuestionFlow,
   QuestionFlowError,
   type AIInteractionStatus,
 } from './questionFlow'
@@ -19,6 +20,35 @@ const services = (): VoiceServices => ({
   stt: { transcribe: vi.fn().mockResolvedValue('¿Cómo respiro?') },
   ai: { ask: vi.fn().mockResolvedValue({ text: 'Con calma.' }) },
   tts: { speak: vi.fn().mockResolvedValue(undefined), stop: vi.fn() },
+})
+
+describe('runTextQuestionFlow', () => {
+  it('sends a written question directly to the API-backed LLM', async () => {
+    const deps = services()
+    const states: AIInteractionStatus[] = []
+    const result = await runTextQuestionFlow(
+      context,
+      '  ¿Cómo coordino los brazos?  ',
+      deps,
+      (status) => states.push(status),
+    )
+
+    expect(deps.stt.transcribe).not.toHaveBeenCalled()
+    expect(deps.ai.ask).toHaveBeenCalledWith(
+      { ...context, question: '¿Cómo coordino los brazos?' },
+      undefined,
+    )
+    expect(states).toEqual(['THINKING', 'SPEAKING', 'COMPLETED'])
+    expect(result.question).toBe('¿Cómo coordino los brazos?')
+  })
+
+  it('rejects blank written questions before calling the LLM', async () => {
+    const deps = services()
+    await expect(
+      runTextQuestionFlow(context, '   ', deps, () => {}),
+    ).rejects.toMatchObject({ stage: 'INPUT' })
+    expect(deps.ai.ask).not.toHaveBeenCalled()
+  })
 })
 
 describe('runQuestionFlow', () => {

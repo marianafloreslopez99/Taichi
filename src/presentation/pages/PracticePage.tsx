@@ -7,7 +7,7 @@ import { playVoiceGuide } from '../../application/voiceGuide'
 import type { PracticeSession, Routine } from '../../domain/models'
 import { flattenRoutineMovements } from '../../domain/routines'
 import { api } from '../../infrastructure/api/client'
-import { useVoiceInteraction } from '../hooks/useVoiceInteraction'
+import { useAIQuestion } from '../hooks/useAIQuestion'
 import { AIQuestionPanel } from '../components/AIQuestionPanel'
 import { Icon } from '../components/Icon'
 import { MovementVisual } from '../components/MovementVisual'
@@ -31,7 +31,7 @@ function PracticeExperience({
   const [speechError, setSpeechError] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const narrationRef = useRef<AbortController | null>(null)
-  const voice = useVoiceInteraction(routine, session, actions.addQuestion)
+  const assistant = useAIQuestion(routine, session, actions.refresh)
   const steps = flattenRoutineMovements(routine)
   const step = steps[session.currentMovementIndex]
   const movement = step?.movement
@@ -82,11 +82,10 @@ function PracticeExperience({
     stopNarration()
     void actions.ask().then(() => {
       setPanelOpen(true)
-      void voice.begin()
     })
   }
   const closePanel = async () => {
-    voice.close()
+    assistant.close()
     await actions.closeQuestion()
     setPanelOpen(false)
     triggerRef.current?.focus()
@@ -192,19 +191,19 @@ function PracticeExperience({
         />
         <button ref={triggerRef} className="voice-cta" onClick={ask}>
           <span>
-            <Icon name="mic" />
+            <Icon name="spark" />
           </span>
-          <strong>Preguntar a la IA</strong>
-          <small>Haz una pausa y resuelve tu duda</small>
+          <strong>Preguntar a Gemini</strong>
+          <small>Escribe una duda sobre este movimiento</small>
           <Icon name="arrowRight" />
         </button>
       </div>
       {panelOpen && (
         <AIQuestionPanel
-          {...voice.state}
+          {...assistant.state}
           onClose={() => void closePanel()}
-          onRetry={() => void voice.begin()}
-          onReplay={() => void voice.replay()}
+          onSubmit={(question) => void assistant.submit(question)}
+          onReplay={() => void assistant.replay()}
           onContinue={() => void continueRoutine()}
         />
       )}

@@ -636,6 +636,41 @@
   color: var(--muted);
   font-size: 13px;
 }
+.ai-question-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+.ai-question-form label {
+  color: var(--forest);
+  font-size: 13px;
+  font-weight: 700;
+}
+.ai-question-form textarea {
+  width: 100%;
+  min-height: 112px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--cream);
+  color: var(--forest);
+  padding: 14px 16px;
+  font: 17px/1.5 var(--font-body);
+}
+.ai-question-form textarea:focus {
+  outline: 3px solid rgb(122 153 126 / 28%);
+  border-color: var(--sage-deep);
+}
+.ai-question-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ai-question-form-footer > span {
+  color: var(--muted);
+  font-size: 11px;
+}
 .ai-stage-list {
   display: flex;
   justify-content: center;
