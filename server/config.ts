@@ -6,7 +6,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url().optional(),
   SERVICE_API_KEY: z.string().min(16).optional(),
   GEMINI_API_KEY: z.string().min(1).optional(),
-  GEMINI_MODEL: z.string().min(1).default('gemini-3.1-pro-preview'),
+  GEMINI_MODEL: z.string().min(1).default('gemini-3.8-flash'),
   GEMINI_TIMEOUT_MS: z.coerce
     .number()
     .int()

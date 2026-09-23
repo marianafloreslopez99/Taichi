@@ -23,7 +23,7 @@ describe('GeminiQuestionService', () => {
       output_text: 'Respira con calma y sin forzar.',
     })
     const service = new GeminiQuestionService(
-      'gemini-3.1-pro-preview',
+      'gemini-3.8-flash',
       null,
       createInteraction,
     )
@@ -34,7 +34,7 @@ describe('GeminiQuestionService', () => {
     })
     expect(createInteraction).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3.8-flash',
         input: expect.stringContaining('¿Cómo debo respirar?'),
         store: false,
       }),
@@ -50,7 +50,7 @@ describe('GeminiQuestionService', () => {
   })
 
   it('fails safely when no API key is configured', async () => {
-    const service = new GeminiQuestionService('gemini-3.1-pro-preview', null)
+    const service = new GeminiQuestionService('gemini-3.8-flash', null)
     await expect(service.answer(context)).rejects.toMatchObject({
       status: 503,
       code: 'AI_NOT_CONFIGURED',
@@ -60,7 +60,7 @@ describe('GeminiQuestionService', () => {
   it('maps provider quota errors without exposing provider details', async () => {
     const createInteraction = vi.fn().mockRejectedValue({ status: 429 })
     const service = new GeminiQuestionService(
-      'gemini-3.1-pro-preview',
+      'gemini-3.8-flash',
       null,
       createInteraction,
     )
