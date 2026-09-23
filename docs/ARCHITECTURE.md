@@ -20,7 +20,7 @@ sequenceDiagram
   participant Hook as useAIQuestion
   participant Flow as runTextQuestionFlow
   participant API as API Express
-  participant LLM as Gemini 3.8 Flash
+  participant LLM as Gemini 3.5 Flash
   participant DB as MySQL
   participant TTS as TextToSpeechService
   UI->>Hook: enviar pregunta escrita

@@ -1,6 +1,6 @@
 # Taichi · Un momento para volver a ti
 
-Aplicación web de acompañamiento para practicar taichí con instrucciones visibles y narradas. Incluye siete rutinas ordenadas por grupo, con 32 movimientos persistidos en MySQL, sesiones anónimas y preguntas escritas contextuales respondidas por Gemini 3.8 Flash y narradas por el navegador.
+Aplicación web de acompañamiento para practicar taichí con instrucciones visibles y narradas. Incluye siete rutinas ordenadas por grupo, con 32 movimientos persistidos en MySQL, sesiones anónimas y preguntas escritas contextuales respondidas por Gemini 3.5 Flash y narradas por el navegador.
 
 ## Inicio
 

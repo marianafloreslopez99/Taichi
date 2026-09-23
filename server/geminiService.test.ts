@@ -23,7 +23,7 @@ describe('GeminiQuestionService', () => {
       output_text: 'Respira con calma y sin forzar.',
     })
     const service = new GeminiQuestionService(
-      'gemini-3.8-flash',
+      'gemini-3.5-flash',
       null,
       createInteraction,
     )
@@ -34,8 +34,12 @@ describe('GeminiQuestionService', () => {
     })
     expect(createInteraction).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: 'gemini-3.8-flash',
+        model: 'gemini-3.5-flash',
         input: expect.stringContaining('¿Cómo debo respirar?'),
+        generation_config: expect.objectContaining({
+          max_output_tokens: 800,
+          thinking_level: 'low',
+        }),
         store: false,
       }),
       expect.objectContaining({
@@ -53,7 +57,7 @@ describe('GeminiQuestionService', () => {
   })
 
   it('fails safely when no API key is configured', async () => {
-    const service = new GeminiQuestionService('gemini-3.8-flash', null)
+    const service = new GeminiQuestionService('gemini-3.5-flash', null)
     await expect(service.answer(context)).rejects.toMatchObject({
       status: 503,
       code: 'AI_NOT_CONFIGURED',
@@ -63,13 +67,32 @@ describe('GeminiQuestionService', () => {
   it('maps provider quota errors without exposing provider details', async () => {
     const createInteraction = vi.fn().mockRejectedValue({ status: 429 })
     const service = new GeminiQuestionService(
-      'gemini-3.8-flash',
+      'gemini-3.5-flash',
       null,
       createInteraction,
     )
     await expect(service.answer(context)).rejects.toMatchObject({
       status: 429,
       code: 'AI_RATE_LIMITED',
+    })
+  })
+
+  it('distinguishes an exhausted daily quota from a temporary limit', async () => {
+    const createInteraction = vi.fn().mockRejectedValue({
+      status: 429,
+      message:
+        'Rate limit exceeded (limit: 20 requests per day on Free Tier).',
+    })
+    const service = new GeminiQuestionService(
+      'gemini-3.5-flash',
+      null,
+      createInteraction,
+    )
+
+    await expect(service.answer(context)).rejects.toMatchObject({
+      status: 429,
+      code: 'AI_DAILY_QUOTA_EXHAUSTED',
+      message: expect.stringContaining('cuota diaria'),
     })
   })
 })
