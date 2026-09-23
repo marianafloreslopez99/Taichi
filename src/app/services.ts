@@ -1,12 +1,12 @@
 import type { VoiceServices } from '../application/ports'
 import {
-  MockLLMAdapter,
   MockSpeechToTextAdapter,
   MockTextToSpeechAdapter,
 } from '../infrastructure/ai/mockAdapters'
+import { ApiLLMAdapter } from '../infrastructure/ai/ApiLLMAdapter'
 
 export const voiceServices: VoiceServices = {
   stt: new MockSpeechToTextAdapter(),
-  ai: new MockLLMAdapter(),
+  ai: new ApiLLMAdapter(),
   tts: new MockTextToSpeechAdapter(),
 }

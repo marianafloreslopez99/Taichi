@@ -17,7 +17,7 @@ describe('practice journey', () => {
     window.history.pushState({}, '', '/')
     let session: PracticeSession = {
       id: '00000000-0000-4000-8000-000000000001',
-      routineId: 'forma-basica-taichi',
+      routineId: 'primeros-movimientos',
       currentMovementIndex: 0,
       status: 'PLAYING',
       startedAt: Date.now(),
@@ -33,7 +33,7 @@ describe('practice journey', () => {
           return new Response(JSON.stringify({ data: routines }), {
             status: 200,
           })
-        if (path.endsWith('/routines/forma-basica-taichi'))
+        if (path.endsWith('/routines/primeros-movimientos'))
           return new Response(JSON.stringify({ data: routines[0] }), {
             status: 200,
           })

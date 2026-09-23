@@ -47,6 +47,7 @@ export function useVoiceInteraction(
     try {
       const result = await runQuestionFlow(
         {
+          sessionId: session.id,
           routineId: routine.id,
           routineName: routine.name,
           difficulty: routine.difficulty,

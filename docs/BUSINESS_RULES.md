@@ -5,6 +5,7 @@
 - **BR-001** Una sesión pertenece a una rutina identificable.
 - **BR-002** Toda rutina publicada contiene al menos un ejercicio y cada ejercicio contiene movimientos.
 - **BR-021** El progreso sigue el orden de ejercicios y, dentro de cada uno, el orden de movimientos; la sesión comienza en índice cero.
+- **BR-034** El catálogo muestra las rutinas por su campo `order`, del 1 al 7.
 
 ## Sesiones
 
@@ -44,6 +45,9 @@
 - **BR-020** Un proveedor se sustituye sin editar las reglas del dominio.
 - **BR-027** La ausencia o denegación de micrófono se traduce en un error recuperable. El mock actual no solicita permiso.
 - **BR-028** Las preguntas de dolor o lesión muestran un aviso educativo y remiten a un profesional; no ofrecen diagnóstico.
+- **BR-035** La clave del proveedor LLM permanece exclusivamente en el backend.
+- **BR-036** Solo se responde sobre el movimiento actual de una sesión en estado `ASKING`.
+- **BR-037** Cada sesión puede solicitar como máximo cinco respuestas de IA por cada diez minutos.
 
 ## Accesibilidad
 

@@ -1,0 +1,124 @@
+{
+  "id": "forma-completa-taichi",
+  "order": 6,
+  "name": "Forma completa de Taichí",
+  "description": "Un ejercicio que reúne los movimientos de brazos, piernas y desplazamientos aprendidos.",
+  "difficulty": "Intermedio",
+  "estimatedMinutes": 15,
+  "category": "Rutina completa",
+  "exercises": [
+    {
+      "id": "forma-completa",
+      "name": "Forma completa de Taichí",
+      "description": "Un ejercicio que reúne los movimientos de brazos, piernas y desplazamientos aprendidos.",
+      "difficulty": "Intermedio",
+      "estimatedMinutes": 15,
+      "category": "Rutina completa",
+      "movements": [
+        {
+          "id": "completa-apertura",
+          "order": 1,
+          "name": "Apertura",
+          "description": "Prepara el cuerpo para comenzar la forma.",
+          "instruction": "Comienza con los pies juntos y la espalda alineada. Abre un pie al ancho de los hombros y eleva los brazos. Después deja que el peso se hunda suavemente.",
+          "durationSeconds": 150,
+          "voiceGuide": [
+            {
+              "text": "Comienza con los pies juntos y la espalda alineada. Abre un pie al ancho de los hombros y eleva los brazos. Después deja que el peso se hunda suavemente.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "opening",
+          "tips": ["Respira con calma.", "Relaja hombros y brazos."]
+        },
+        {
+          "id": "completa-crin",
+          "order": 2,
+          "name": "Acariciar la Crin del Caballo",
+          "description": "Realiza el primer desplazamiento coordinando brazos y piernas.",
+          "instruction": "Sostén una pelota imaginaria y cambia el peso. Abre un paso amplio y mueve las manos mientras el cuerpo acompaña el desplazamiento.",
+          "durationSeconds": 150,
+          "voiceGuide": [
+            {
+              "text": "Sostén una pelota imaginaria y cambia el peso. Abre un paso amplio y mueve las manos mientras el cuerpo acompaña el desplazamiento.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "horse",
+          "tips": ["Mantén el peso bajo.", "Coordina el paso con los brazos."]
+        },
+        {
+          "id": "completa-grulla",
+          "order": 3,
+          "name": "Grulla Blanca Extiende las Alas",
+          "description": "Continúa la forma cambiando el peso y la posición de los brazos.",
+          "instruction": "Cambia el peso hacia el otro lado mientras una mano sube y la otra baja. Junta el pie y continúa el movimiento sin detenerte bruscamente.",
+          "durationSeconds": 150,
+          "voiceGuide": [
+            {
+              "text": "Cambia el peso hacia el otro lado mientras una mano sube y la otra baja. Junta el pie y continúa el movimiento sin detenerte bruscamente.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "crane",
+          "tips": [
+            "Mantén las manos hacia el frente.",
+            "Evita movimientos bruscos."
+          ]
+        },
+        {
+          "id": "completa-rodilla",
+          "order": 4,
+          "name": "Cepillar la Rodilla",
+          "description": "Combina el paso de arco con el movimiento de empuje.",
+          "instruction": "Coloca una mano cerca de la oreja y la otra cerca de la cadera. Da el paso y cambia el peso hacia adelante mientras extiendes la mano.",
+          "durationSeconds": 150,
+          "voiceGuide": [
+            {
+              "text": "Coloca una mano cerca de la oreja y la otra cerca de la cadera. Da el paso y cambia el peso hacia adelante mientras extiendes la mano.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "brush",
+          "tips": ["Mantén una base estable.", "No fuerces la rodilla."]
+        },
+        {
+          "id": "completa-laud",
+          "order": 5,
+          "name": "Tocar el Laud",
+          "description": "Cambia el peso y termina el movimiento con una postura estable.",
+          "instruction": "Lleva el peso hacia adelante como si fueras a tomar algo. Después cambia el peso hacia atrás y deja que el cuerpo acompañe el movimiento mientras colocas las manos.",
+          "durationSeconds": 150,
+          "voiceGuide": [
+            {
+              "text": "Lleva el peso hacia adelante como si fueras a tomar algo. Después cambia el peso hacia atrás y deja que el cuerpo acompañe el movimiento mientras colocas las manos.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "lute",
+          "tips": [
+            "Mantén los brazos relajados.",
+            "Coordina el movimiento del cuerpo completo."
+          ]
+        },
+        {
+          "id": "completa-cierre",
+          "order": 6,
+          "name": "Cierre",
+          "description": "Termina la práctica regresando lentamente al centro.",
+          "instruction": "Regresa los pies a una posición cómoda. Baja los brazos lentamente y realiza una respiración tranquila antes de terminar.",
+          "durationSeconds": 150,
+          "voiceGuide": [
+            {
+              "text": "Regresa los pies a una posición cómoda. Baja los brazos lentamente y realiza una respiración tranquila antes de terminar.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "closing",
+          "tips": ["No tengas prisa.", "Termina en una postura cómoda."]
+        }
+      ],
+      "order": 1
+    }
+  ]
+}

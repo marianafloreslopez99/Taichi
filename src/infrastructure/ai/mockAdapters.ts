@@ -1,7 +1,4 @@
 import type {
-  AIContext,
-  AIQuestionService,
-  AIResponse,
   SpeechToTextService,
   TextToSpeechService,
 } from '../../application/ports'
@@ -12,23 +9,6 @@ export class MockSpeechToTextAdapter implements SpeechToTextService {
     void _audio
     await delay(MOCK_TIMING.transcription)
     return '¿Qué tan flexionadas deben estar mis rodillas?'
-  }
-}
-
-export class MockLLMAdapter implements AIQuestionService {
-  async ask(context: AIContext): Promise<AIResponse> {
-    await delay(MOCK_TIMING.thinking)
-    const medicalQuestion = /dolor|lesi[oó]n|lastim|m[eé]dic/i.test(
-      context.question,
-    )
-    return medicalQuestion
-      ? {
-          text: 'Si sientes dolor, detén el movimiento. Esta guía no sustituye la orientación de un profesional de salud.',
-          requiresProfessionalAdvice: true,
-        }
-      : {
-          text: `En ${context.movementName.toLowerCase()}, mantén una flexión ligera y cómoda. Evita bloquear las rodillas y respira con calma.`,
-        }
   }
 }
 

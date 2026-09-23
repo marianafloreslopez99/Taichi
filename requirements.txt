@@ -20,6 +20,7 @@ react-router@^8.4.0
 express@^5.2.1
 @prisma/client@^6.19.0
 @tanstack/react-query@^5.103.2
+@google/genai@^2.24.0
 zod@^4.6.5
 
 ## Dependencias de desarrollo
@@ -47,7 +48,7 @@ vite@^8.3.0
 vitest@^5.0.1
 
 ## Instalación manual equivalente
-# npm install react react-dom react-router
+# npm install react react-dom react-router @google/genai
 # npm install --save-dev vite @vitejs/plugin-react typescript vitest jsdom @testing-library/react @testing-library/user-event @testing-library/jest-dom @types/react @types/react-dom @types/node eslint @eslint/js typescript-eslint eslint-plugin-react-hooks eslint-plugin-react-refresh globals prettier
 
 ## Futuras integraciones (no instalar en el MVP)
@@ -56,5 +57,4 @@ vitest@^5.0.1
 # msw                         # mocks de red para pruebas de integración
 # playwright                  # pruebas end-to-end en navegador
 # proveedor STT               # añadir solo al definir backend y proveedor
-# proveedor LLM               # mantener la llamada detrás de AIQuestionService
 # proveedor TTS               # mantener la llamada detrás de TextToSpeechService

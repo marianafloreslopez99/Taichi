@@ -1,0 +1,79 @@
+{
+  "id": "cambio-peso",
+  "order": 3,
+  "name": "Cambio de peso",
+  "description": "Practica cómo trasladar el peso del cuerpo de un lado a otro antes de incorporar los pasos.",
+  "difficulty": "Principiante",
+  "estimatedMinutes": 7,
+  "category": "Para aprender",
+  "exercises": [
+    {
+      "id": "peso",
+      "name": "Cambio de peso",
+      "description": "Practica cómo trasladar el peso del cuerpo de un lado a otro antes de incorporar los pasos.",
+      "difficulty": "Principiante",
+      "estimatedMinutes": 7,
+      "category": "Para aprender",
+      "movements": [
+        {
+          "id": "peso-caballo",
+          "order": 1,
+          "name": "Cambio de peso en caballo",
+          "description": "Aprende a trasladar el peso manteniendo los pies paralelos.",
+          "instruction": "Coloca los pies paralelos y separados. Distribuye el peso entre ambas piernas. Empuja suavemente con una pierna para llevar el peso hacia el otro lado y deja que la pelvis acompañe el movimiento.",
+          "durationSeconds": 140,
+          "voiceGuide": [
+            {
+              "text": "Coloca los pies paralelos y separados. Distribuye el peso entre ambas piernas. Empuja suavemente con una pierna para llevar el peso hacia el otro lado y deja que la pelvis acompañe el movimiento.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "horse",
+          "tips": [
+            "Mantén las rodillas relajadas.",
+            "No gires la rodilla hacia dentro."
+          ]
+        },
+        {
+          "id": "peso-centro",
+          "order": 2,
+          "name": "Regresar al centro",
+          "description": "Encuentra el equilibrio antes de cambiar nuevamente de lado.",
+          "instruction": "Después de llevar el peso hacia un lado, relaja el cuerpo y permite que el peso vuelva al centro. Repite lentamente hacia el lado contrario.",
+          "durationSeconds": 140,
+          "voiceGuide": [
+            {
+              "text": "Después de llevar el peso hacia un lado, relaja el cuerpo y permite que el peso vuelva al centro. Repite lentamente hacia el lado contrario.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "balance",
+          "tips": [
+            "No tengas prisa.",
+            "Busca una distribución cómoda del peso."
+          ]
+        },
+        {
+          "id": "arco",
+          "order": 3,
+          "name": "Cambio de peso en Arco",
+          "description": "Practica el cambio de peso utilizando una posición más amplia.",
+          "instruction": "Coloca un pie adelante y el otro atrás formando una posición de arco. Cambia el peso hacia la pierna delantera y después regresa al centro para llevarlo hacia la pierna trasera.",
+          "durationSeconds": 140,
+          "voiceGuide": [
+            {
+              "text": "Coloca un pie adelante y el otro atrás formando una posición de arco. Cambia el peso hacia la pierna delantera y después regresa al centro para llevarlo hacia la pierna trasera.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "bow",
+          "tips": [
+            "El pie delantero apunta hacia adelante.",
+            "Acompaña el movimiento con la pelvis."
+          ]
+        }
+      ],
+      "order": 1
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import type { Difficulty } from '../domain/models'
 
 export interface AIContext {
+  sessionId: string
   routineId: string
   routineName: string
   difficulty: Difficulty
@@ -20,7 +21,7 @@ export interface SpeechToTextService {
 }
 
 export interface AIQuestionService {
-  ask(context: AIContext): Promise<AIResponse>
+  ask(context: AIContext, signal?: AbortSignal): Promise<AIResponse>
 }
 
 export interface TextToSpeechService {

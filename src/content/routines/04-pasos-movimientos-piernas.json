@@ -1,0 +1,98 @@
+{
+  "id": "pasos-movimientos-piernas",
+  "order": 4,
+  "name": "Pasos y movimientos de piernas",
+  "description": "Practica los desplazamientos básicos y aprende a colocar los pies con control.",
+  "difficulty": "Intermedio",
+  "estimatedMinutes": 8,
+  "category": "Para avanzar",
+  "exercises": [
+    {
+      "id": "piernas",
+      "name": "Pasos y movimientos de piernas",
+      "description": "Practica los desplazamientos básicos y aprende a colocar los pies con control.",
+      "difficulty": "Intermedio",
+      "estimatedMinutes": 8,
+      "category": "Para avanzar",
+      "movements": [
+        {
+          "id": "paso-lateral",
+          "order": 1,
+          "name": "Paso lateral",
+          "description": "Aprende a desplazarte hacia un lado manteniendo el control del cuerpo.",
+          "instruction": "Lleva el peso hacia una pierna y permite que la otra quede libre. Gira suavemente el pie y desplázalo hacia el lado. Coloca primero el talón y después la planta del pie.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Lleva el peso hacia una pierna y permite que la otra quede libre. Gira suavemente el pie y desplázalo hacia el lado. Coloca primero el talón y después la planta del pie.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "legs",
+          "tips": [
+            "Mantén el peso bajo y estable.",
+            "Evita caer sobre el pie que estás colocando."
+          ]
+        },
+        {
+          "id": "paso-arco-ancho",
+          "order": 2,
+          "name": "Paso de Arco amplio",
+          "description": "Practica un paso donde el ancho es mayor que la longitud.",
+          "instruction": "Desde una posición estable, lleva el pie hacia adelante y ligeramente hacia un lado. Coloca primero el talón y después la planta. Cambia el peso lentamente hacia la pierna delantera.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Desde una posición estable, lleva el pie hacia adelante y ligeramente hacia un lado. Coloca primero el talón y después la planta. Cambia el peso lentamente hacia la pierna delantera.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "bow",
+          "tips": [
+            "Mantén el movimiento controlado.",
+            "El pie delantero apunta hacia adelante."
+          ]
+        },
+        {
+          "id": "paso-hombros",
+          "order": 3,
+          "name": "Paso al ancho de los hombros",
+          "description": "Aprende a colocar los pies manteniendo una base estable.",
+          "instruction": "Lleva un pie hacia adelante hasta conseguir aproximadamente el ancho de tus hombros. Coloca el talón primero y después la planta. Cambia el peso de manera gradual.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Lleva un pie hacia adelante hasta conseguir aproximadamente el ancho de tus hombros. Coloca el talón primero y después la planta. Cambia el peso de manera gradual.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "legs",
+          "tips": [
+            "No juntes demasiado los pies.",
+            "Mantén una postura cómoda."
+          ]
+        },
+        {
+          "id": "posicion-vacia",
+          "order": 4,
+          "name": "Posición vacía",
+          "description": "Aprende a liberar una pierna sin perder el equilibrio.",
+          "instruction": "Lleva el peso completamente hacia una pierna. La otra queda libre y con muy poco peso, permitiendo levantar suavemente la punta o el talón sin perder la estabilidad.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Lleva el peso completamente hacia una pierna. La otra queda libre y con muy poco peso, permitiendo levantar suavemente la punta o el talón sin perder la estabilidad.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "balance",
+          "tips": [
+            "Mantén el peso en una sola pierna.",
+            "Hazlo lentamente para evitar perder el equilibrio."
+          ]
+        }
+      ],
+      "order": 1
+    }
+  ]
+}

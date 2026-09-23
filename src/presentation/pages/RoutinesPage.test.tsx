@@ -36,8 +36,9 @@ describe('RoutinesPage', () => {
       .then(() => {
         expect(
           screen.getAllByRole('button', { name: /elegir esta rutina/i }),
-        ).toHaveLength(1)
-        expect(screen.getByText('Forma básica de taichí')).toBeInTheDocument()
+        ).toHaveLength(7)
+        expect(screen.getByText('Primeros movimientos')).toBeInTheDocument()
+        expect(screen.getByText('Repaso de la forma')).toBeInTheDocument()
       })
   })
 })

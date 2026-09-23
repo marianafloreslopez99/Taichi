@@ -68,7 +68,7 @@ export async function runQuestionFlow(
     onStatus('THINKING')
     let response: AIResponse
     try {
-      response = await services.ai.ask({ ...context, question })
+      response = await services.ai.ask({ ...context, question }, signal)
       ensureActive()
     } catch {
       throw new QuestionFlowError(

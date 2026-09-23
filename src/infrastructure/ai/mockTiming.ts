@@ -1,7 +1,6 @@
 export const MOCK_TIMING = {
   listening: 1200,
   transcription: 900,
-  thinking: 1300,
   speakingFallback: 1100,
 } as const
 

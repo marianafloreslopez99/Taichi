@@ -20,17 +20,18 @@ enum SessionStatus {
 }
 
 model Routine {
-  id              String     @id
-  name            String
-  description     String     @db.Text
-  difficulty      Difficulty
+  id               String            @id
+  order            Int               @default(0)
+  name             String
+  description      String            @db.Text
+  difficulty       Difficulty
   estimatedMinutes Int
-  category        String
-  published       Boolean    @default(true)
-  exercises       RoutineExercise[]
-  sessions        Session[]
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  category         String
+  published        Boolean           @default(true)
+  exercises        RoutineExercise[]
+  sessions         Session[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 }
 
 model Exercise {
@@ -59,17 +60,17 @@ model RoutineExercise {
 }
 
 model Movement {
-  id              String   @id
+  id              String       @id
   exerciseId      String
   order           Int
   name            String
-  description     String   @db.Text
-  instruction     String   @db.Text
+  description     String       @db.Text
+  instruction     String       @db.Text
   durationSeconds Int
   voiceGuide      Json
   tips            Json
   image           String
-  exercise        Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  exercise        Exercise     @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   questions       AIQuestion[]
 
   @@unique([exerciseId, order])
@@ -77,17 +78,17 @@ model Movement {
 }
 
 model Session {
-  id                  String        @id
-  routineId           String
+  id                   String        @id
+  routineId            String
   currentMovementIndex Int           @default(0)
-  status              SessionStatus  @default(PLAYING)
-  startedAt           DateTime
-  completedAt         DateTime?
-  elapsedSeconds      Int           @default(0)
-  routine             Routine       @relation(fields: [routineId], references: [id], onDelete: Restrict)
-  questions           AIQuestion[]
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  status               SessionStatus @default(PLAYING)
+  startedAt            DateTime
+  completedAt          DateTime?
+  elapsedSeconds       Int           @default(0)
+  routine              Routine       @relation(fields: [routineId], references: [id], onDelete: Restrict)
+  questions            AIQuestion[]
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   @@index([routineId])
   @@index([status])

@@ -1,3 +1,4 @@
+import type { AIResponse } from '../../application/ports'
 import type { AIQuestion, PracticeSession, Routine } from '../../domain/models'
 
 const apiBase = '/api/v1'
@@ -64,6 +65,17 @@ export const api = {
         question: question.question,
         answer: question.answer,
       }),
+    }),
+  answerQuestion: (
+    sessionId: string,
+    movementId: string,
+    question: string,
+    signal?: AbortSignal,
+  ) =>
+    request<AIResponse>(`/sessions/${sessionId}/answer`, {
+      method: 'POST',
+      body: JSON.stringify({ movementId, question }),
+      signal,
     }),
   deleteSession: (sessionId: string) =>
     request<void>(`/sessions/${sessionId}`, { method: 'DELETE' }),

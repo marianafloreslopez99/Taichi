@@ -1,0 +1,111 @@
+{
+  "id": "brazos-piernas",
+  "order": 5,
+  "name": "Brazos y piernas",
+  "description": "Combina los movimientos de brazos con los cambios de peso y los pasos básicos.",
+  "difficulty": "Intermedio",
+  "estimatedMinutes": 10,
+  "category": "Para practicar",
+  "exercises": [
+    {
+      "id": "coordinacion",
+      "name": "Brazos y piernas",
+      "description": "Combina los movimientos de brazos con los cambios de peso y los pasos básicos.",
+      "difficulty": "Intermedio",
+      "estimatedMinutes": 10,
+      "category": "Para practicar",
+      "movements": [
+        {
+          "id": "forma-apertura",
+          "order": 1,
+          "name": "Apertura",
+          "description": "Comienza la secuencia coordinando postura, respiración y brazos.",
+          "instruction": "Comienza con los pies juntos. Abre un pie al ancho de los hombros y distribuye el peso. Eleva los brazos al inhalar y bájalos lentamente al exhalar.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Comienza con los pies juntos. Abre un pie al ancho de los hombros y distribuye el peso. Eleva los brazos al inhalar y bájalos lentamente al exhalar.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "opening",
+          "tips": ["Relaja los hombros.", "Mantén la espalda alineada."]
+        },
+        {
+          "id": "forma-crin",
+          "order": 2,
+          "name": "Acariciar la Crin del Caballo",
+          "description": "Une el cambio de peso con el movimiento de los brazos.",
+          "instruction": "Sostén una pelota imaginaria frente al cuerpo. Cambia el peso y abre un paso amplio hacia un lado. Al mismo tiempo, cambia la posición de las manos y extiende suavemente una de ellas.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Sostén una pelota imaginaria frente al cuerpo. Cambia el peso y abre un paso amplio hacia un lado. Al mismo tiempo, cambia la posición de las manos y extiende suavemente una de ellas.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "horse",
+          "tips": [
+            "Mantén las manos frente al cuerpo.",
+            "Coloca primero el talón y después la planta."
+          ]
+        },
+        {
+          "id": "forma-grulla",
+          "order": 3,
+          "name": "Grulla Blanca Extiende las Alas",
+          "description": "Coordina el cambio de peso, las manos y el paso.",
+          "instruction": "Desde la posición anterior, cambia el peso hacia la otra pierna mientras una mano sube y la otra baja. Junta el pie y vuelve a formar la posición de las manos.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Desde la posición anterior, cambia el peso hacia la otra pierna mientras una mano sube y la otra baja. Junta el pie y vuelve a formar la posición de las manos.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "crane",
+          "tips": [
+            "Realiza los tres movimientos de manera coordinada.",
+            "Mantén los movimientos suaves."
+          ]
+        },
+        {
+          "id": "forma-rodilla",
+          "order": 4,
+          "name": "Cepillar la Rodilla",
+          "description": "Combina el paso de arco con el movimiento de empuje.",
+          "instruction": "Lleva una mano cerca de la oreja y la otra hacia la cadera. Coloca el pie al ancho de los hombros y cambia el peso hacia adelante mientras extiendes la mano para empujar suavemente.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Lleva una mano cerca de la oreja y la otra hacia la cadera. Coloca el pie al ancho de los hombros y cambia el peso hacia adelante mientras extiendes la mano para empujar suavemente.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "brush",
+          "tips": ["No fuerces la rodilla.", "Mantén los dedos hacia adelante."]
+        },
+        {
+          "id": "forma-laud",
+          "order": 5,
+          "name": "Tocar el Laud",
+          "description": "Finaliza la secuencia coordinando brazos, torso y piernas.",
+          "instruction": "Lleva el peso hacia la pierna delantera mientras una mano se mueve como si fuera a tomar algo. Después cambia el peso hacia atrás, deja que el cuerpo gire y coloca ambas manos frente al cuerpo.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Lleva el peso hacia la pierna delantera mientras una mano se mueve como si fuera a tomar algo. Después cambia el peso hacia atrás, deja que el cuerpo gire y coloca ambas manos frente al cuerpo.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "lute",
+          "tips": [
+            "Deja que el torso acompañe el cambio de peso.",
+            "Mantén los brazos relajados."
+          ]
+        }
+      ],
+      "order": 1
+    }
+  ]
+}

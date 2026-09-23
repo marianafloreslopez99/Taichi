@@ -7,6 +7,7 @@ import {
 import type { VoiceServices } from './ports'
 
 const context = {
+  sessionId: '00000000-0000-4000-8000-000000000001',
   routineId: 'r',
   routineName: 'Rutina',
   difficulty: 'Principiante' as const,
@@ -37,10 +38,13 @@ describe('runQuestionFlow', () => {
       'SPEAKING',
       'COMPLETED',
     ])
-    expect(deps.ai.ask).toHaveBeenCalledWith({
-      ...context,
-      question: '¿Cómo respiro?',
-    })
+    expect(deps.ai.ask).toHaveBeenCalledWith(
+      {
+        ...context,
+        question: '¿Cómo respiro?',
+      },
+      undefined,
+    )
     expect(deps.tts.speak).toHaveBeenCalledWith('Con calma.')
     expect(result.question).toBe('¿Cómo respiro?')
   })

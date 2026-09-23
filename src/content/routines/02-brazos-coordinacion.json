@@ -1,0 +1,114 @@
+{
+  "id": "brazos-coordinacion",
+  "order": 2,
+  "name": "Brazos y coordinación",
+  "description": "Practica los principales movimientos de brazos del taichí y aprende a coordinarlos con el cambio de peso.",
+  "difficulty": "Principiante",
+  "estimatedMinutes": 10,
+  "category": "Para aprender",
+  "exercises": [
+    {
+      "id": "brazos",
+      "name": "Brazos y coordinación",
+      "description": "Practica los principales movimientos de brazos del taichí y aprende a coordinarlos con el cambio de peso.",
+      "difficulty": "Principiante",
+      "estimatedMinutes": 10,
+      "category": "Para aprender",
+      "movements": [
+        {
+          "id": "apertura-brazos",
+          "order": 1,
+          "name": "Apertura",
+          "description": "Comienza conectando la respiración con el movimiento de los brazos.",
+          "instruction": "Coloca los pies al ancho de los hombros. Eleva los brazos lentamente mientras inhalas y bájalos al exhalar. Mantén las palmas hacia abajo y los brazos separados al ancho de los hombros.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Coloca los pies al ancho de los hombros. Eleva los brazos lentamente mientras inhalas y bájalos al exhalar. Mantén las palmas hacia abajo y los brazos separados al ancho de los hombros.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "opening",
+          "tips": ["Mantén la espalda erguida.", "Relaja los hombros."]
+        },
+        {
+          "id": "crin-brazos",
+          "order": 2,
+          "name": "Acariciar la Crin del Caballo",
+          "description": "Aprende a cambiar las manos y el peso de un lado al otro.",
+          "instruction": "Sostén una pelota imaginaria frente al pecho. La mano que está arriba baja mientras la mano de abajo sube. Al mismo tiempo, cambia el peso hacia el lado de la mano que sube.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Sostén una pelota imaginaria frente al pecho. La mano que está arriba baja mientras la mano de abajo sube. Al mismo tiempo, cambia el peso hacia el lado de la mano que sube.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "horse",
+          "tips": [
+            "Mantén las manos frente al cuerpo.",
+            "No aprietes los codos contra el cuerpo."
+          ]
+        },
+        {
+          "id": "grulla-brazos",
+          "order": 3,
+          "name": "Grulla Blanca Extiende las Alas",
+          "description": "Coordina el movimiento de las manos con el cambio de peso.",
+          "instruction": "Comienza con las manos como si sostuvieras una pelota. Una mano sube mientras la otra baja y el peso cambia hacia un lado. Regresa al centro y repite hacia el otro lado.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Comienza con las manos como si sostuvieras una pelota. Una mano sube mientras la otra baja y el peso cambia hacia un lado. Regresa al centro y repite hacia el otro lado.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "crane",
+          "tips": [
+            "Mantén la mano superior hacia el frente.",
+            "Realiza el movimiento sin tensión."
+          ]
+        },
+        {
+          "id": "cepillar-rodilla",
+          "order": 4,
+          "name": "Cepillar la Rodilla",
+          "description": "Coordina las manos para preparar un movimiento hacia adelante.",
+          "instruction": "Lleva una mano cerca de la oreja y la otra hacia la cadera. Cambia el peso hacia adelante mientras extiendes una mano como si empujaras suavemente. Cambia las manos y repite.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Lleva una mano cerca de la oreja y la otra hacia la cadera. Cambia el peso hacia adelante mientras extiendes una mano como si empujaras suavemente. Cambia las manos y repite.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "brush",
+          "tips": [
+            "Mantén los dedos apuntando hacia adelante.",
+            "No fuerces la rodilla delantera."
+          ]
+        },
+        {
+          "id": "tocar-laud",
+          "order": 5,
+          "name": "Tocar el Laud",
+          "description": "Aprende a colocar las manos frente al cuerpo mientras cambias el peso.",
+          "instruction": "Eleva una mano mientras la otra se mueve hacia atrás. Cambia el peso suavemente y coloca ambas manos frente al cuerpo, como si sostuvieras un instrumento.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Eleva una mano mientras la otra se mueve hacia atrás. Cambia el peso suavemente y coloca ambas manos frente al cuerpo, como si sostuvieras un instrumento.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "lute",
+          "tips": [
+            "Mantén las manos delante del cuerpo.",
+            "Relaja los hombros y los codos."
+          ]
+        }
+      ],
+      "order": 1
+    }
+  ]
+}
