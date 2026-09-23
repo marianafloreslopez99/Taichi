@@ -12,11 +12,14 @@ export const routineInclude = {
   },
 } satisfies Prisma.RoutineInclude
 
-export type RoutineRecord = Prisma.RoutineGetPayload<{ include: typeof routineInclude }>
+export type RoutineRecord = Prisma.RoutineGetPayload<{
+  include: typeof routineInclude
+}>
 
 export function serializeRoutine(routine: RoutineRecord): DomainRoutine {
   return {
     id: routine.id,
+    order: routine.order,
     name: routine.name,
     description: routine.description,
     difficulty: routine.difficulty,
@@ -72,7 +75,9 @@ export function serializeSession(
     id: string
     routineId: string
     currentMovementIndex: number
-    status: DomainRoutine extends never ? never : 'PLAYING' | 'PAUSED' | 'ASKING' | 'COMPLETED'
+    status: DomainRoutine extends never
+      ? never
+      : 'PLAYING' | 'PAUSED' | 'ASKING' | 'COMPLETED'
     startedAt: Date
     completedAt: Date | null
     elapsedSeconds: number

@@ -1,0 +1,95 @@
+{
+  "id": "primeros-movimientos",
+  "order": 1,
+  "name": "Primeros movimientos",
+  "description": "Un ejercicio suave para comenzar a conocer los movimientos básicos de brazos del taichí.",
+  "difficulty": "Principiante",
+  "estimatedMinutes": 6,
+  "category": "Para empezar",
+  "exercises": [
+    {
+      "id": "inicio",
+      "name": "Primeros movimientos",
+      "description": "Un ejercicio suave para comenzar a conocer los movimientos básicos de brazos del taichí.",
+      "difficulty": "Principiante",
+      "estimatedMinutes": 6,
+      "category": "Para empezar",
+      "movements": [
+        {
+          "id": "pp-apertura",
+          "order": 1,
+          "name": "Apertura",
+          "description": "Comienza con un movimiento suave de brazos.",
+          "instruction": "Coloca los pies separados y mantén una postura cómoda. Abre los brazos lentamente mientras acompañas el movimiento con una respiración tranquila.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Coloca los pies separados y adopta una postura cómoda.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Relaja los hombros.",
+              "pauseAfterMs": 2500
+            },
+            {
+              "text": "Ahora, comienza a elevar los brazos lentamente.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Acompaña el movimiento con una respiración tranquila.",
+              "pauseAfterMs": 5000
+            },
+            {
+              "text": "Muy bien. Baja los brazos lentamente.",
+              "pauseAfterMs": 4000
+            }
+          ],
+          "image": "opening",
+          "tips": [
+            "Mantén los hombros relajados.",
+            "Realiza el movimiento lentamente."
+          ]
+        },
+        {
+          "id": "crin-caballo",
+          "order": 2,
+          "name": "Acariciar la Crin del Caballo",
+          "description": "Aprende a mover los brazos mientras cambias suavemente el peso.",
+          "instruction": "Imagina que sostienes una pelota grande frente al cuerpo. Cambia la posición de las manos y lleva el peso hacia un lado. Regresa al centro, cambia las manos y repite hacia el otro lado.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Imagina que sostienes una pelota grande frente al cuerpo. Cambia la posición de las manos y lleva el peso hacia un lado. Regresa al centro, cambia las manos y repite hacia el otro lado.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "horse",
+          "tips": [
+            "Mantén las manos frente al cuerpo.",
+            "Haz los cambios de peso lentamente."
+          ]
+        },
+        {
+          "id": "grulla",
+          "order": 3,
+          "name": "Grulla Blanca Extiende las Alas",
+          "description": "Coordina los brazos con el cambio de peso.",
+          "instruction": "Comienza sosteniendo una pelota frente al cuerpo. Cambia el peso hacia un lado mientras una mano sube y la otra baja. Regresa al centro y repite hacia el otro lado.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Comienza sosteniendo una pelota frente al cuerpo. Cambia el peso hacia un lado mientras una mano sube y la otra baja. Regresa al centro y repite hacia el otro lado.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "crane",
+          "tips": [
+            "Mantén los movimientos suaves.",
+            "No lleves las manos demasiado hacia los lados."
+          ]
+        }
+      ],
+      "order": 1
+    }
+  ]
+}

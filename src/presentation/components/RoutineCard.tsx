@@ -37,7 +37,10 @@ export function RoutineCard({
         <div className="routine-meta">
           <span>{routine.estimatedMinutes} min</span>
           <span>{routine.difficulty}</span>
-          <span>{routine.exercises.length} ejercicios</span>
+          <span>
+            {routine.exercises.length}{' '}
+            {routine.exercises.length === 1 ? 'ejercicio' : 'ejercicios'}
+          </span>
         </div>
         <button
           className="button button--primary routine-card-action"

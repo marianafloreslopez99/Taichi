@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react'
-import { screen, waitFor } from '@testing-library/dom'
+import { screen, waitFor, within } from '@testing-library/dom'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { voiceServices } from './services'
@@ -17,7 +17,7 @@ describe('practice journey', () => {
     window.history.pushState({}, '', '/')
     let session: PracticeSession = {
       id: '00000000-0000-4000-8000-000000000001',
-      routineId: 'forma-basica-taichi',
+      routineId: 'primeros-movimientos',
       currentMovementIndex: 0,
       status: 'PLAYING',
       startedAt: Date.now(),
@@ -33,7 +33,7 @@ describe('practice journey', () => {
           return new Response(JSON.stringify({ data: routines }), {
             status: 200,
           })
-        if (path.endsWith('/routines/forma-basica-taichi'))
+        if (path.endsWith('/routines/primeros-movimientos'))
           return new Response(JSON.stringify({ data: routines[0] }), {
             status: 200,
           })
@@ -41,6 +41,33 @@ describe('practice journey', () => {
           return new Response(JSON.stringify({ data: session }), {
             status: 201,
           })
+        if (path.endsWith('/questions') && init?.method === 'POST') {
+          const input = JSON.parse(String(init.body)) as {
+            movementId: string
+            question: string
+          }
+          const answer = {
+            text: 'Abre los brazos al inhalar, sin forzar el ritmo.',
+            requiresProfessionalAdvice: false,
+          }
+          session = {
+            ...session,
+            questions: [
+              ...session.questions,
+              {
+                id: '00000000-0000-4000-8000-000000000002',
+                sessionId: session.id,
+                movementId: input.movementId,
+                question: input.question,
+                answer: answer.text,
+                createdAt: Date.now(),
+              },
+            ],
+          }
+          return new Response(JSON.stringify({ data: answer }), {
+            status: 201,
+          })
+        }
         const action = path.split('/').pop()
         if (action === 'pause') session = { ...session, status: 'PAUSED' }
         if (action === 'resume') session = { ...session, status: 'PLAYING' }
@@ -69,6 +96,24 @@ describe('practice journey', () => {
     expect(
       await screen.findByRole('heading', { name: 'Apertura' }),
     ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: /preguntar a gemini/i }),
+    )
+    const dialog = await screen.findByRole('dialog')
+    const question = within(dialog).getByLabelText(/escribe tu duda/i)
+    await user.type(question, '¿Cómo coordino la respiración?')
+    await user.click(
+      within(dialog).getByRole('button', { name: /preguntar a gemini/i }),
+    )
+    expect(
+      await screen.findByText(
+        'Abre los brazos al inhalar, sin forzar el ritmo.',
+      ),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /continuar rutina/i }))
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('En movimiento'),
+    )
     const callsBeforeRepeat = speak.mock.calls.length
     await user.click(screen.getByRole('button', { name: 'Repetir' }))
     expect(speak.mock.calls.length).toBeGreaterThan(callsBeforeRepeat)

@@ -17,10 +17,69 @@ export interface QuestionFlowResult {
 
 export class QuestionFlowError extends Error {
   constructor(
-    public readonly stage: 'MICROPHONE' | 'STT' | 'LLM',
+    public readonly stage: 'INPUT' | 'MICROPHONE' | 'STT' | 'LLM',
     message: string,
   ) {
     super(message)
+  }
+}
+
+export async function runTextQuestionFlow(
+  context: Omit<AIContext, 'question'>,
+  question: string,
+  services: Pick<VoiceServices, 'ai' | 'tts'>,
+  onStatus: (status: AIInteractionStatus) => void,
+  onAnswer?: (response: AIResponse) => void,
+  signal?: AbortSignal,
+): Promise<QuestionFlowResult> {
+  const normalizedQuestion = question.trim()
+  if (!normalizedQuestion) {
+    throw new QuestionFlowError(
+      'INPUT',
+      'Escribe una pregunta antes de enviar.',
+    )
+  }
+  const ensureActive = () => {
+    if (signal?.aborted) throw new DOMException('Cancelado', 'AbortError')
+  }
+
+  try {
+    onStatus('THINKING')
+    let response: AIResponse
+    try {
+      response = await services.ai.ask(
+        { ...context, question: normalizedQuestion },
+        signal,
+      )
+      ensureActive()
+    } catch (error) {
+      if (signal?.aborted) throw new DOMException('Cancelado', 'AbortError')
+      throw new QuestionFlowError(
+        'LLM',
+        error instanceof Error
+          ? error.message
+          : 'No pudimos responder ahora. Inténtalo de nuevo.',
+      )
+    }
+
+    onAnswer?.(response)
+    onStatus('SPEAKING')
+    let audioError = false
+    try {
+      await services.tts.speak(response.text)
+      ensureActive()
+    } catch {
+      audioError = true
+    }
+    onStatus('COMPLETED')
+    return { question: normalizedQuestion, response, audioError }
+  } catch (error) {
+    if (signal?.aborted) throw new DOMException('Cancelado', 'AbortError')
+    if (error instanceof QuestionFlowError) throw error
+    throw new QuestionFlowError(
+      'LLM',
+      'No pudimos responder ahora. Inténtalo de nuevo.',
+    )
   }
 }
 
@@ -68,7 +127,7 @@ export async function runQuestionFlow(
     onStatus('THINKING')
     let response: AIResponse
     try {
-      response = await services.ai.ask({ ...context, question })
+      response = await services.ai.ask({ ...context, question }, signal)
       ensureActive()
     } catch {
       throw new QuestionFlowError(

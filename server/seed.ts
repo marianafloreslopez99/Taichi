@@ -7,7 +7,11 @@ const prisma = new PrismaClient()
 
 async function main() {
   await prisma.routine.updateMany({
-    where: { id: { in: ['fundamentos', 'relajacion', 'manana'] } },
+    where: {
+      id: {
+        in: ['fundamentos', 'relajacion', 'manana', 'forma-basica-taichi'],
+      },
+    },
     data: { published: false },
   })
 
@@ -15,6 +19,7 @@ async function main() {
     await prisma.routine.upsert({
       where: { id: routine.id },
       update: {
+        order: routine.order,
         name: routine.name,
         description: routine.description,
         difficulty: routine.difficulty,
@@ -24,6 +29,7 @@ async function main() {
       },
       create: {
         id: routine.id,
+        order: routine.order,
         name: routine.name,
         description: routine.description,
         difficulty: routine.difficulty,

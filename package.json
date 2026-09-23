@@ -21,6 +21,7 @@
     "format": "prettier --write src docs README.md index.html package.json tsconfig*.json vite.config.ts eslint.config.js"
   },
   "dependencies": {
+    "@google/genai": "^2.24.0",
     "@prisma/client": "^6.19.0",
     "@tanstack/react-query": "^5.103.2",
     "express": "^5.2.1",

@@ -1,0 +1,127 @@
+{
+  "id": "repaso-forma",
+  "order": 7,
+  "name": "Repaso de la forma",
+  "description": "Una práctica final para repetir la secuencia completa con calma y familiarizarte con los movimientos.",
+  "difficulty": "Intermedio",
+  "estimatedMinutes": 12,
+  "category": "Para repasar",
+  "exercises": [
+    {
+      "id": "repaso-forma",
+      "name": "Repaso de la forma",
+      "description": "Una práctica final para repetir la secuencia completa con calma y familiarizarte con los movimientos.",
+      "difficulty": "Intermedio",
+      "estimatedMinutes": 12,
+      "category": "Para repasar",
+      "movements": [
+        {
+          "id": "repaso-apertura",
+          "order": 1,
+          "name": "Apertura",
+          "description": "Prepara tu postura y comienza con una respiración tranquila.",
+          "instruction": "Coloca los pies juntos, abre al ancho de los hombros y eleva los brazos lentamente. Baja los brazos mientras relajas el cuerpo.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Coloca los pies juntos, abre al ancho de los hombros y eleva los brazos lentamente. Baja los brazos mientras relajas el cuerpo.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "opening",
+          "tips": ["Mantén la espalda alineada.", "Respira de manera natural."]
+        },
+        {
+          "id": "repaso-crin",
+          "order": 2,
+          "name": "Acariciar la Crin del Caballo",
+          "description": "Repite el cambio de peso acompañado por los brazos.",
+          "instruction": "Forma una pelota imaginaria frente al cuerpo. Cambia el peso y realiza un paso amplio mientras cambias la posición de las manos.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Forma una pelota imaginaria frente al cuerpo. Cambia el peso y realiza un paso amplio mientras cambias la posición de las manos.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "horse",
+          "tips": ["Mantén el movimiento fluido.", "No pierdas el equilibrio."]
+        },
+        {
+          "id": "repaso-grulla",
+          "order": 3,
+          "name": "Grulla Blanca Extiende las Alas",
+          "description": "Repite la coordinación entre brazos y piernas.",
+          "instruction": "Cambia el peso mientras una mano sube y la otra baja. Junta el pie y vuelve a formar la posición de la pelota antes de continuar.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Cambia el peso mientras una mano sube y la otra baja. Junta el pie y vuelve a formar la posición de la pelota antes de continuar.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "crane",
+          "tips": [
+            "Mantén las manos delante del cuerpo.",
+            "Hazlo a un ritmo cómodo."
+          ]
+        },
+        {
+          "id": "repaso-rodilla",
+          "order": 4,
+          "name": "Cepillar la Rodilla",
+          "description": "Practica el paso de arco y el empuje.",
+          "instruction": "Lleva una mano cerca de la oreja y otra hacia la cadera. Coloca el pie y cambia el peso hacia adelante mientras extiendes la mano.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Lleva una mano cerca de la oreja y otra hacia la cadera. Coloca el pie y cambia el peso hacia adelante mientras extiendes la mano.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "brush",
+          "tips": [
+            "Mantén la rodilla cómoda.",
+            "Acompaña el movimiento con el cuerpo."
+          ]
+        },
+        {
+          "id": "repaso-laud",
+          "order": 5,
+          "name": "Tocar el Laud",
+          "description": "Finaliza la secuencia con una transición suave.",
+          "instruction": "Lleva el peso hacia adelante, permite que el torso acompañe el movimiento y después cambia el peso hacia atrás mientras colocas las manos frente al cuerpo.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Lleva el peso hacia adelante, permite que el torso acompañe el movimiento y después cambia el peso hacia atrás mientras colocas las manos frente al cuerpo.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "lute",
+          "tips": ["Relaja los hombros.", "Mantén los movimientos controlados."]
+        },
+        {
+          "id": "repaso-cierre",
+          "order": 6,
+          "name": "Finalizar la práctica",
+          "description": "Regresa al centro y termina la sesión con calma.",
+          "instruction": "Deja que los brazos bajen lentamente y regresa a una postura natural. Respira tranquilamente y observa cómo se siente tu cuerpo.",
+          "durationSeconds": 120,
+          "voiceGuide": [
+            {
+              "text": "Deja que los brazos bajen lentamente y regresa a una postura natural. Respira tranquilamente y observa cómo se siente tu cuerpo.",
+              "pauseAfterMs": 0
+            }
+          ],
+          "image": "closing",
+          "tips": [
+            "No tengas prisa.",
+            "Si sientes molestias, detén la práctica."
+          ]
+        }
+      ],
+      "order": 1
+    }
+  ]
+}

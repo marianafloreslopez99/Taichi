@@ -2,17 +2,22 @@
 
 ```mermaid
 flowchart LR
-  M[Captura de micrófono futura] --> S[SpeechToTextService]
-  S --> Q[runQuestionFlow]
-  Q --> L[AIQuestionService]
+  M[Pregunta escrita] --> Q[runTextQuestionFlow]
+  Q --> P[POST /api/v1/sessions/:id/questions]
+  P --> L[Gemini Interactions API]
+  L --> D[(MySQL)]
   L --> T[TextToSpeechService]
   T --> A[Audio o texto accesible]
 ```
 
-Los contratos están en `src/application/ports.ts`. `SpeechToTextService.transcribe(audio: Blob): Promise<string>` transforma audio en texto; `AIQuestionService.ask(context: AIContext): Promise<AIResponse>` responde con contexto; `TextToSpeechService.speak(text): Promise<void>` y `stop(): void` controlan narración. `AIContext` contiene ID/nombre de rutina, dificultad, ID/nombre/instrucción del movimiento y pregunta. La aplicación valida texto no vacío antes de llamar al LLM.
+Los contratos están en `src/application/ports.ts`. `AIQuestionService.ask(context: AIContext, signal?: AbortSignal): Promise<AIResponse>` responde con contexto; `TextToSpeechService.speak(text): Promise<void>` y `stop(): void` controlan narración. `AIContext` contiene sesión, rutina, dificultad, movimiento, instrucción y pregunta. La aplicación valida texto no vacío antes de llamar al LLM.
 
-En el MVP, `MockSpeechToTextAdapter` retorna “¿Qué tan flexionadas deben estar mis rodillas?”, `MockLLMAdapter` da una respuesta contextual segura y `MockTextToSpeechAdapter` usa `speechSynthesis` si existe, con resolución simulada si no. Los tiempos están en `src/infrastructure/ai/mockTiming.ts`. Se crea un `Blob` vacío porque la captura es demostrativa; no se solicita permiso ni se graba audio. Esto debe estar claro para no confundir al usuario.
+`ApiLLMAdapter` envía solo sesión, movimiento y pregunta. El servidor reconstruye el contexto confiable desde MySQL, comprueba que la sesión esté en `ASKING`, que el movimiento sea el actual y que la rutina siga publicada; solo entonces llama `ai.interactions.create` y persiste la respuesta del proveedor. El navegador nunca puede proporcionar el texto que se guarda como respuesta. El modelo predeterminado es el estable `gemini-3.8-flash`, las interacciones no se almacenan en Gemini (`store: false`), el timeout predeterminado es 30 segundos, los reintentos automáticos están desactivados para evitar esperas largas y el límite local es cinco solicitudes por sesión cada diez minutos.
 
-Para sustituir un proveedor: implemente el puerto en `src/infrastructure/ai`, configure claves y proxy solo en el futuro backend, y cambie la instancia en `src/app/services.ts`. Mantenga las credenciales fuera del frontend. Añada cancelación, timeout, límites de tamaño, consentimiento de micrófono, política de retención y tests contractuales. Las respuestas con posible contenido médico deben pasar por la política de seguridad del producto; la interfaz ya muestra un aviso. Ejemplos de nombres posibles: `OpenAISpeechAdapter`, `GeminiLLMAdapter`, `AzureSpeechAdapter`; ninguno existe en este MVP. Las preguntas completadas se guardan en la sesión mediante `POST /api/v1/sessions/:sessionId/questions`.
+La clave se lee como `GEMINI_API_KEY`; por compatibilidad también se acepta la variable existente `API_KEY`. Nunca se envía al frontend. `GEMINI_MODEL` y `GEMINI_TIMEOUT_MS` permiten configurar modelo y timeout. Para sustituir proveedor, implemente `ServerAIQuestionService` y entréguelo a `createApp`, sin cambiar dominio ni presentación.
 
-El flujo conserva la respuesta escrita si TTS falla. Un fallo de STT o LLM se transforma en mensaje recuperable; el motor de sesión no se destruye. `stop()` evita solapamiento entre instrucción y respuesta.
+Una respuesta 429 por cuota se presenta como un error recuperable. Para usar otro modelo autorizado, cambie `GEMINI_MODEL` sin modificar código.
+
+La entrada principal es un campo de texto accesible; no se solicita permiso ni se graba audio. `MockTextToSpeechAdapter` usa `speechSynthesis` del navegador como mejora progresiva. Las preguntas y respuestas completadas se guardan juntas en MySQL mediante `POST /api/v1/sessions/:sessionId/questions`.
+
+El prompt del servidor limita la respuesta a orientación educativa breve, rechaza cambios de instrucciones y evita diagnósticos. Las preguntas de salud activan un aviso profesional. El flujo conserva la respuesta escrita si TTS falla; un fallo del LLM es recuperable y no destruye la sesión. `AbortController` y `stop()` cancelan solicitudes o narraciones al cerrar el panel.

@@ -31,6 +31,7 @@ export interface Exercise {
 
 export interface Routine {
   id: string
+  order: number
   name: string
   description: string
   difficulty: Difficulty

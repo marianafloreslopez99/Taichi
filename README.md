@@ -1,6 +1,6 @@
 # Taichi · Un momento para volver a ti
 
-Aplicación web de acompañamiento para practicar taichí con instrucciones visibles y narradas. Incluye la rutina “Forma básica de taichí”, compuesta por siete ejercicios y 32 movimientos persistidos en MySQL, sesiones anónimas y un recorrido simulado de pregunta por voz (STT → LLM → TTS).
+Aplicación web de acompañamiento para practicar taichí con instrucciones visibles y narradas. Incluye siete rutinas ordenadas por grupo, con 32 movimientos persistidos en MySQL, sesiones anónimas y preguntas escritas contextuales respondidas por Gemini 3.8 Flash y narradas por el navegador.
 
 ## Inicio
 
@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Copie `.env.example` como `.env`, configure `DATABASE_URL` con una base MySQL y ejecute:
+Copie `.env.example` como `.env`, configure `DATABASE_URL` con una base MySQL y `GEMINI_API_KEY` con una clave de Gemini, y ejecute:
 
 ```bash
 npm run db:setup
@@ -25,14 +25,14 @@ Abra la URL indicada por Vite. Para verificar: `npm run typecheck`, `npm run lin
 
 ## Alcance
 
-Puede elegir una rutina, recorrer sus ejercicios y movimientos, pausar, repetir la guía, realizar una pregunta simulada y consultar el resumen. Al reanudar, la narración comienza desde la primera frase del movimiento actual. La instrucción siempre está disponible como texto si el audio falla. Las sesiones anónimas sobreviven a una recarga mediante un identificador opaco guardado en `localStorage`.
+Puede elegir entre siete rutinas, recorrer sus movimientos, pausar, repetir la guía, realizar una pregunta contextual a Gemini y consultar el resumen. Al reanudar, la narración comienza desde la primera frase del movimiento actual. La instrucción siempre está disponible como texto si el audio falla. Las sesiones anónimas sobreviven a una recarga mediante un identificador opaco guardado en `localStorage`.
 
-No se conectan servicios de IA, cuentas ni cámara. La aplicación es educativa y no da diagnósticos médicos. Ante dolor o lesión, detenga la práctica y consulte a un profesional.
+La clave de Gemini, el contexto confiable y la persistencia de respuestas permanecen en el backend; nunca se exponen al navegador. La entrada actual es escrita y no hay cuentas ni cámara. La aplicación es educativa y no da diagnósticos médicos. Ante dolor o lesión, detenga la práctica y consulte a un profesional.
 
 ## Stack y organización
 
-React, TypeScript estricto, Vite, React Router, CSS organizado por tokens/base/componentes/páginas, Vitest, React Testing Library, ESLint y Prettier. `src/domain` contiene reglas puras; `src/application` define contratos y el flujo de preguntas; `src/infrastructure` contiene datos y adaptadores mock; `src/presentation` contiene React. Consulte [la documentación técnica](docs/README.md) para decisiones, modelos, transiciones, pruebas y fases futuras.
+React, TypeScript estricto, Vite, React Router, Express, Prisma, MySQL, Google Gen AI SDK, Vitest, React Testing Library, ESLint y Prettier. `src/domain` contiene reglas puras; `src/application` define contratos y el flujo de preguntas; `src/infrastructure` contiene el cliente API y adaptadores; `src/presentation` contiene React. Consulte [la documentación técnica](docs/README.md) para decisiones, modelos, transiciones, pruebas y fases futuras.
 
 ## Próximas integraciones
 
-STT/LLM/TTS reales, cuentas e historial, y reconocimiento de postura son fases futuras documentadas en [ROADMAP.md](docs/ROADMAP.md).
+STT y TTS de proveedor, cuentas e historial, y reconocimiento de postura son fases futuras documentadas en [ROADMAP.md](docs/ROADMAP.md).
