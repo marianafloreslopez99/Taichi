@@ -33,7 +33,7 @@ El servidor exige una sesión en `ASKING`, verifica que `movementId` sea el movi
 }
 ```
 
-Errores relevantes: `INVALID_PARAMETERS` (400), `INVALID_SESSION_TRANSITION` (409), `AI_RATE_LIMITED` (429), `AI_NOT_CONFIGURED` (503), `AI_TIMEOUT` (504) y `AI_PROVIDER_ERROR` (502).
+Errores relevantes: `INVALID_PARAMETERS` (400), `INVALID_SESSION_TRANSITION` (409), `AI_RATE_LIMITED` (429), `AI_DAILY_QUOTA_EXHAUSTED` (429), `AI_NOT_CONFIGURED` (503), `AI_TIMEOUT` (504) y `AI_PROVIDER_ERROR` (502). `AI_DAILY_QUOTA_EXHAUSTED` requiere esperar al reinicio diario de la cuota del proyecto o habilitar un nivel con mayor capacidad en Google AI Studio.
 
 ## Operación
 

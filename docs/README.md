@@ -1,6 +1,6 @@
 # Documentación técnica
 
-Taichi es una aplicación educativa para guiar rutinas de movimiento con apoyo de voz. El backend Express usa MySQL para sesiones anónimas persistentes y Gemini 3.8 Flash para responder preguntas escritas con el contexto del movimiento. La voz del navegador lee instrucciones y respuestas cuando está disponible; nunca se captura audio del micrófono en esta fase.
+Taichi es una aplicación educativa para guiar rutinas de movimiento con apoyo de voz. El backend Express usa MySQL para sesiones anónimas persistentes y Gemini 3.5 Flash para responder preguntas escritas con el contexto del movimiento. La voz del navegador lee instrucciones y respuestas cuando está disponible; nunca se captura audio del micrófono en esta fase.
 
 ## Mapa de lectura
 
