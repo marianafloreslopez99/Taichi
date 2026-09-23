@@ -6,110 +6,108 @@ process.loadEnvFile?.('.env')
 const prisma = new PrismaClient()
 
 async function main() {
-  await prisma.$transaction(async (transaction) => {
-    await transaction.routine.updateMany({
-      where: { id: { in: ['fundamentos', 'relajacion', 'manana'] } },
-      data: { published: false },
+  await prisma.routine.updateMany({
+    where: { id: { in: ['fundamentos', 'relajacion', 'manana'] } },
+    data: { published: false },
+  })
+
+  for (const routine of routines) {
+    await prisma.routine.upsert({
+      where: { id: routine.id },
+      update: {
+        name: routine.name,
+        description: routine.description,
+        difficulty: routine.difficulty,
+        estimatedMinutes: routine.estimatedMinutes,
+        category: routine.category,
+        published: true,
+      },
+      create: {
+        id: routine.id,
+        name: routine.name,
+        description: routine.description,
+        difficulty: routine.difficulty,
+        estimatedMinutes: routine.estimatedMinutes,
+        category: routine.category,
+        published: true,
+      },
     })
 
-    for (const routine of routines) {
-      await transaction.routine.upsert({
-        where: { id: routine.id },
+    await prisma.routineExercise.deleteMany({
+      where: { routineId: routine.id },
+    })
+
+    for (const exercise of routine.exercises) {
+      await prisma.exercise.upsert({
+        where: { id: exercise.id },
         update: {
-          name: routine.name,
-          description: routine.description,
-          difficulty: routine.difficulty,
-          estimatedMinutes: routine.estimatedMinutes,
-          category: routine.category,
-          published: true,
+          name: exercise.name,
+          description: exercise.description,
+          difficulty: exercise.difficulty,
+          estimatedMinutes: exercise.estimatedMinutes,
+          category: exercise.category,
         },
         create: {
-          id: routine.id,
-          name: routine.name,
-          description: routine.description,
-          difficulty: routine.difficulty,
-          estimatedMinutes: routine.estimatedMinutes,
-          category: routine.category,
-          published: true,
+          id: exercise.id,
+          name: exercise.name,
+          description: exercise.description,
+          difficulty: exercise.difficulty,
+          estimatedMinutes: exercise.estimatedMinutes,
+          category: exercise.category,
+        },
+      })
+      await prisma.routineExercise.create({
+        data: {
+          routineId: routine.id,
+          exerciseId: exercise.id,
+          order: exercise.order,
         },
       })
 
-      await transaction.routineExercise.deleteMany({
-        where: { routineId: routine.id },
+      const movementIds = exercise.movements.map((movement) => movement.id)
+      await prisma.movement.deleteMany({
+        where: {
+          exerciseId: exercise.id,
+          id: { notIn: movementIds },
+        },
       })
 
-      for (const exercise of routine.exercises) {
-        await transaction.exercise.upsert({
-          where: { id: exercise.id },
+      for (const movement of exercise.movements) {
+        const voiceGuide = movement.voiceGuide.map(
+          (cue): Prisma.InputJsonObject => ({
+            text: cue.text,
+            pauseAfterMs: cue.pauseAfterMs,
+          }),
+        )
+        await prisma.movement.upsert({
+          where: { id: movement.id },
           update: {
-            name: exercise.name,
-            description: exercise.description,
-            difficulty: exercise.difficulty,
-            estimatedMinutes: exercise.estimatedMinutes,
-            category: exercise.category,
+            exerciseId: exercise.id,
+            order: movement.order,
+            name: movement.name,
+            description: movement.description,
+            instruction: movement.instruction,
+            durationSeconds: movement.durationSeconds,
+            voiceGuide,
+            tips: movement.tips,
+            image: movement.image,
           },
           create: {
-            id: exercise.id,
-            name: exercise.name,
-            description: exercise.description,
-            difficulty: exercise.difficulty,
-            estimatedMinutes: exercise.estimatedMinutes,
-            category: exercise.category,
-          },
-        })
-        await transaction.routineExercise.create({
-          data: {
-            routineId: routine.id,
+            id: movement.id,
             exerciseId: exercise.id,
-            order: exercise.order,
+            order: movement.order,
+            name: movement.name,
+            description: movement.description,
+            instruction: movement.instruction,
+            durationSeconds: movement.durationSeconds,
+            voiceGuide,
+            tips: movement.tips,
+            image: movement.image,
           },
         })
-
-        const movementIds = exercise.movements.map((movement) => movement.id)
-        await transaction.movement.deleteMany({
-          where: {
-            exerciseId: exercise.id,
-            id: { notIn: movementIds },
-          },
-        })
-
-        for (const movement of exercise.movements) {
-          const voiceGuide = movement.voiceGuide.map(
-            (cue): Prisma.InputJsonObject => ({
-              text: cue.text,
-              pauseAfterMs: cue.pauseAfterMs,
-            }),
-          )
-          await transaction.movement.upsert({
-            where: { id: movement.id },
-            update: {
-              exerciseId: exercise.id,
-              order: movement.order,
-              name: movement.name,
-              description: movement.description,
-              instruction: movement.instruction,
-              durationSeconds: movement.durationSeconds,
-              voiceGuide,
-              tips: movement.tips,
-              image: movement.image,
-            },
-            create: {
-              id: movement.id,
-              exerciseId: exercise.id,
-              order: movement.order,
-              name: movement.name,
-              description: movement.description,
-              instruction: movement.instruction,
-              durationSeconds: movement.durationSeconds,
-              voiceGuide,
-              tips: movement.tips,
-              image: movement.image,
-            },
-          })
-        }
       }
     }
-  })
+  }
 }
 
 main()
