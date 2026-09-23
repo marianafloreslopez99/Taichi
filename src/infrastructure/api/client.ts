@@ -34,14 +34,28 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   listRoutines: () => request<Routine[]>('/routines'),
+  getRoutine: (routineId: string) => request<Routine>(`/routines/${routineId}`),
   createSession: (routineId: string, replaceSessionId?: string) =>
     request<PracticeSession>('/sessions', {
       method: 'POST',
       body: JSON.stringify({ routineId, replaceSessionId }),
     }),
-  getSession: (sessionId: string) => request<PracticeSession>(`/sessions/${sessionId}`),
-  transition: (sessionId: string, action: 'pause' | 'resume' | 'next' | 'previous' | 'ask' | 'close-question' | 'complete') =>
-    request<PracticeSession>(`/sessions/${sessionId}/${action}`, { method: 'POST' }),
+  getSession: (sessionId: string) =>
+    request<PracticeSession>(`/sessions/${sessionId}`),
+  transition: (
+    sessionId: string,
+    action:
+      | 'pause'
+      | 'resume'
+      | 'next'
+      | 'previous'
+      | 'ask'
+      | 'close-question'
+      | 'complete',
+  ) =>
+    request<PracticeSession>(`/sessions/${sessionId}/${action}`, {
+      method: 'POST',
+    }),
   addQuestion: (sessionId: string, question: AIQuestion) =>
     request<PracticeSession>(`/sessions/${sessionId}/questions`, {
       method: 'POST',

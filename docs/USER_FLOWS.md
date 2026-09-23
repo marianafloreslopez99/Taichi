@@ -3,7 +3,8 @@
 ```mermaid
 flowchart LR
   A[Catálogo] --> B[Iniciar rutina]
-  B --> C[Movimiento]
+  B --> E[Ejercicio]
+  E --> C[Movimiento]
   C -->|Siguiente| C
   C -->|Último: finalizar| D[Resumen]
   D --> A
@@ -29,7 +30,7 @@ La pregunta mock es editable mediante adaptadores, pero la demostración usa un 
 
 ## Otros recorridos
 
-- **Pausa y continuar:** `PLAYING → PAUSED → PLAYING`; la instrucción se detiene al pausar y se vuelve a leer al continuar.
+- **Pausa y continuar:** `PLAYING → PAUSED → PLAYING`; la guía se cancela al pausar y reinicia desde la primera frase del movimiento al continuar.
 - **Repetir:** vuelve a solicitar lectura de la instrucción actual sin tocar índice, progreso o tiempo.
 - **Regresar:** retrocede un movimiento si existe; el tiempo total no se reinicia.
 - **Abandonar:** acción explícita desde práctica, con confirmación del navegador; se limpia sesión y se vuelve al catálogo.

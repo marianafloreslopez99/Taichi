@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import type { Routine, PracticeSession, AIQuestion } from '../../domain/models'
+import { flattenRoutineMovements } from '../../domain/routines'
 import {
   runQuestionFlow,
   type AIInteractionStatus,
@@ -33,7 +34,8 @@ export function useVoiceInteraction(
   const [state, setState] = useState<VoiceState>(initialState)
   const generation = useRef(0)
   const controller = useRef<AbortController | null>(null)
-  const movement = routine.movements[session.currentMovementIndex]
+  const movement =
+    flattenRoutineMovements(routine)[session.currentMovementIndex]?.movement
 
   const begin = useCallback(async () => {
     if (!movement) return

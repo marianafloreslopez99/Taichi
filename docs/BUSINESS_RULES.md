@@ -3,8 +3,8 @@
 ## Rutinas
 
 - **BR-001** Una sesión pertenece a una rutina identificable.
-- **BR-002** Toda rutina publicada contiene al menos un movimiento.
-- **BR-021** El orden de movimientos determina el progreso y comienza en índice cero.
+- **BR-002** Toda rutina publicada contiene al menos un ejercicio y cada ejercicio contiene movimientos.
+- **BR-021** El progreso sigue el orden de ejercicios y, dentro de cada uno, el orden de movimientos; la sesión comienza en índice cero.
 
 ## Sesiones
 
@@ -19,6 +19,8 @@
 ## Navegación e instrucciones
 
 - **BR-007** Repetir reproduce la instrucción actual sin cambiar el movimiento.
+- **BR-032** Pausar cancela la guía; reanudar comienza desde la primera frase del mismo movimiento.
+- **BR-033** Cambiar de movimiento, preguntar o salir cancela voz y pausas pendientes.
 - **BR-008** Se puede regresar mientras la sesión está activa o pausada.
 - **BR-009** No se puede navegar más allá del último movimiento; el botón final se convierte en “Finalizar práctica”.
 - **BR-024** El primer movimiento no tiene anterior.

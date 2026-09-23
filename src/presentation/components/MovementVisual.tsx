@@ -1,15 +1,15 @@
 import type { Movement } from '../../domain/models'
 
 export function MovementVisual({
-  visual,
+  image,
   compact = false,
 }: {
-  visual: Movement['visual']
+  image: Movement['image']
   compact?: boolean
 }) {
   return (
     <div
-      className={`movement-visual movement-visual--${visual}${compact ? ' movement-visual--compact' : ''}`}
+      className={`movement-visual movement-visual--${image}${compact ? ' movement-visual--compact' : ''}`}
       aria-hidden="true"
     >
       <div className="visual-orbit visual-orbit--outer" />

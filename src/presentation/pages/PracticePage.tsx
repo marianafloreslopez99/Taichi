@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { useSession } from '../../app/SessionProvider'
 import { voiceServices } from '../../app/services'
+import { playVoiceGuide } from '../../application/voiceGuide'
 import type { PracticeSession, Routine } from '../../domain/models'
-import { getRoutine } from '../../infrastructure/routines'
+import { flattenRoutineMovements } from '../../domain/routines'
+import { api } from '../../infrastructure/api/client'
 import { useVoiceInteraction } from '../hooks/useVoiceInteraction'
 import { AIQuestionPanel } from '../components/AIQuestionPanel'
 import { Icon } from '../components/Icon'
@@ -27,23 +30,41 @@ function PracticeExperience({
   const [panelOpen, setPanelOpen] = useState(false)
   const [speechError, setSpeechError] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const narrationRef = useRef<AbortController | null>(null)
   const voice = useVoiceInteraction(routine, session, actions.addQuestion)
-  const movement = routine.movements[session.currentMovementIndex]
+  const steps = flattenRoutineMovements(routine)
+  const step = steps[session.currentMovementIndex]
+  const movement = step?.movement
+  const exercise = step?.exercise
+
+  const stopNarration = useCallback(() => {
+    narrationRef.current?.abort()
+    narrationRef.current = null
+    voiceServices.tts.stop()
+  }, [])
+
+  const startNarration = useCallback(() => {
+    if (!movement) return
+    stopNarration()
+    const controller = new AbortController()
+    narrationRef.current = controller
+    setSpeechError(false)
+    void playVoiceGuide(
+      movement.voiceGuide,
+      voiceServices.tts,
+      controller.signal,
+    ).catch(() => {
+      if (!controller.signal.aborted) setSpeechError(true)
+    })
+  }, [movement, stopNarration])
 
   useEffect(() => {
-    if (!movement || session.status !== 'PLAYING') return
-    let current = true
-    setSpeechError(false)
-    void voiceServices.tts.speak(movement.instruction).catch(() => {
-      if (current) setSpeechError(true)
-    })
-    return () => {
-      current = false
-      voiceServices.tts.stop()
-    }
-  }, [movement, session.status])
+    if (session.status !== 'PLAYING') return
+    startNarration()
+    return stopNarration
+  }, [session.status, startNarration, stopNarration])
 
-  if (!movement)
+  if (!movement || !exercise)
     return (
       <div className="container empty-state">
         <h1>Movimiento no encontrado</h1>
@@ -52,26 +73,27 @@ function PracticeExperience({
     )
 
   const next = () => {
-    voiceServices.tts.stop()
-    if (session.currentMovementIndex === routine.movements.length - 1) {
+    stopNarration()
+    if (session.currentMovementIndex === steps.length - 1) {
       void actions.complete().then(() => navigate('/resumen'))
     } else void actions.next()
   }
   const ask = () => {
+    stopNarration()
     void actions.ask().then(() => {
       setPanelOpen(true)
       void voice.begin()
     })
   }
-  const closePanel = () => {
+  const closePanel = async () => {
     voice.close()
-    actions.closeQuestion()
+    await actions.closeQuestion()
     setPanelOpen(false)
     triggerRef.current?.focus()
   }
-  const continueRoutine = () => {
-    closePanel()
-    void actions.resume()
+  const continueRoutine = async () => {
+    await closePanel()
+    await actions.resume()
   }
   const abandon = () => {
     if (
@@ -79,7 +101,7 @@ function PracticeExperience({
         '¿Quieres abandonar esta práctica? Tu progreso actual se perderá.',
       )
     ) {
-      voiceServices.tts.stop()
+      stopNarration()
       actions.clear()
       navigate('/rutinas')
     }
@@ -97,20 +119,22 @@ function PracticeExperience({
       </div>
       <ProgressBar
         current={session.currentMovementIndex}
-        total={routine.movements.length}
+        total={steps.length}
       />
       <div className="practice-main">
         <div className="practice-art">
           <span className="practice-art-label">
-            MOVIMIENTO {String(movement.order).padStart(2, '0')}
+            EJERCICIO {String(exercise.order).padStart(2, '0')} · MOVIMIENTO{' '}
+            {String(movement.order).padStart(2, '0')}
           </span>
-          <MovementVisual visual={movement.visual} />
+          <MovementVisual image={movement.image} />
           <span className="practice-art-note">Muévete a tu ritmo</span>
         </div>
         <div className="practice-content" key={movement.id}>
           <span className="eyebrow">
-            PASO {String(movement.order).padStart(2, '0')} DE{' '}
-            {String(routine.movements.length).padStart(2, '0')}
+            {exercise.name} · PASO{' '}
+            {String(session.currentMovementIndex + 1).padStart(2, '0')} DE{' '}
+            {String(steps.length).padStart(2, '0')}
           </span>
           <h2>{movement.name}</h2>
           <p className="movement-description">{movement.description}</p>
@@ -151,17 +175,19 @@ function PracticeExperience({
         <PracticeControls
           isPaused={session.status === 'PAUSED'}
           isFirst={session.currentMovementIndex === 0}
-          isLast={session.currentMovementIndex === routine.movements.length - 1}
-          onPrevious={() => actions.previous()}
-          onRepeat={() => {
-            setSpeechError(false)
-            void voiceServices.tts
-              .speak(movement.instruction)
-              .catch(() => setSpeechError(true))
+          isLast={session.currentMovementIndex === steps.length - 1}
+          onPrevious={() => {
+            stopNarration()
+            void actions.previous()
           }}
-          onTogglePause={() =>
-            session.status === 'PAUSED' ? actions.resume() : actions.pause()
-          }
+          onRepeat={startNarration}
+          onTogglePause={() => {
+            if (session.status === 'PAUSED') void actions.resume()
+            else {
+              stopNarration()
+              void actions.pause()
+            }
+          }}
           onNext={next}
         />
         <button ref={triggerRef} className="voice-cta" onClick={ask}>
@@ -176,10 +202,10 @@ function PracticeExperience({
       {panelOpen && (
         <AIQuestionPanel
           {...voice.state}
-          onClose={closePanel}
+          onClose={() => void closePanel()}
           onRetry={() => void voice.begin()}
           onReplay={() => void voice.replay()}
-          onContinue={continueRoutine}
+          onContinue={() => void continueRoutine()}
         />
       )}
     </div>
@@ -188,17 +214,26 @@ function PracticeExperience({
 
 export function PracticePage() {
   const { routineId } = useParams()
-  const routine = getRoutine(routineId)
+  const routineQuery = useQuery({
+    queryKey: ['routine', routineId],
+    queryFn: () => api.getRoutine(routineId!),
+    enabled: Boolean(routineId),
+  })
+  const routine = routineQuery.data
   const { session, isLoading } = useSession()
-  if (!routine)
+  if (isLoading || routineQuery.isLoading)
+    return (
+      <div className="container empty-state" role="status">
+        <h1>Recuperando tu práctica…</h1>
+      </div>
+    )
+  if (!routine || routineQuery.isError)
     return (
       <div className="container empty-state">
         <h1>Rutina no encontrada</h1>
         <Link to="/rutinas">Ver rutinas</Link>
       </div>
     )
-  if (isLoading)
-    return <div className="container empty-state" role="status"><h1>Recuperando tu práctica…</h1></div>
   if (!session || session.routineId !== routine.id)
     return <Navigate to="/rutinas" replace />
   if (session.status === 'COMPLETED') return <Navigate to="/resumen" replace />

@@ -1,6 +1,6 @@
 # Taichi · Un momento para volver a ti
 
-Aplicación web de acompañamiento para practicar rutinas de taichí con instrucciones visibles y narradas. Incluye tres rutinas persistidas en MySQL, sesiones anónimas y un recorrido simulado de pregunta por voz (STT → LLM → TTS).
+Aplicación web de acompañamiento para practicar taichí con instrucciones visibles y narradas. Incluye la rutina “Forma básica de taichí”, compuesta por siete ejercicios y 32 movimientos persistidos en MySQL, sesiones anónimas y un recorrido simulado de pregunta por voz (STT → LLM → TTS).
 
 ## Inicio
 
@@ -25,7 +25,7 @@ Abra la URL indicada por Vite. Para verificar: `npm run typecheck`, `npm run lin
 
 ## Alcance
 
-Puede elegir una rutina, iniciar una práctica, avanzar y retroceder, pausar, repetir la instrucción, realizar una pregunta simulada y consultar el resumen. La instrucción siempre está disponible como texto si el audio falla. Las sesiones anónimas sobreviven a una recarga mediante un identificador opaco guardado en `localStorage`.
+Puede elegir una rutina, recorrer sus ejercicios y movimientos, pausar, repetir la guía, realizar una pregunta simulada y consultar el resumen. Al reanudar, la narración comienza desde la primera frase del movimiento actual. La instrucción siempre está disponible como texto si el audio falla. Las sesiones anónimas sobreviven a una recarga mediante un identificador opaco guardado en `localStorage`.
 
 No se conectan servicios de IA, cuentas ni cámara. La aplicación es educativa y no da diagnósticos médicos. Ante dolor o lesión, detenga la práctica y consulte a un profesional.
 

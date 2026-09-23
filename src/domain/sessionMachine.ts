@@ -1,4 +1,5 @@
 import type { AIQuestion, PracticeSession, Routine } from './models'
+import { flattenRoutineMovements } from './routines'
 
 export type SessionAction =
   | { type: 'START'; routine: Routine; id: string; at: number }
@@ -22,7 +23,7 @@ export function sessionReducer(
   action: SessionAction,
 ): PracticeSession | null {
   if (action.type === 'START') {
-    if (action.routine.movements.length === 0) return session
+    if (flattenRoutineMovements(action.routine).length === 0) return session
     return {
       id: action.id,
       routineId: action.routine.id,

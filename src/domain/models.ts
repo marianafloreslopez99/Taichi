@@ -1,6 +1,11 @@
 export type Difficulty = 'Principiante' | 'Intermedio'
 export type SessionStatus = 'PLAYING' | 'PAUSED' | 'ASKING' | 'COMPLETED'
 
+export interface VoiceCue {
+  text: string
+  pauseAfterMs: number
+}
+
 export interface Movement {
   id: string
   order: number
@@ -8,8 +13,20 @@ export interface Movement {
   description: string
   instruction: string
   durationSeconds: number
+  voiceGuide: VoiceCue[]
   tips: string[]
-  visual: 'opening' | 'cloud' | 'tree' | 'wave' | 'breath' | 'closing'
+  image: string
+}
+
+export interface Exercise {
+  id: string
+  order: number
+  name: string
+  description: string
+  difficulty: Difficulty
+  estimatedMinutes: number
+  category: string
+  movements: Movement[]
 }
 
 export interface Routine {
@@ -19,7 +36,7 @@ export interface Routine {
   difficulty: Difficulty
   estimatedMinutes: number
   category: string
-  movements: Movement[]
+  exercises: Exercise[]
 }
 
 export interface AIQuestion {

@@ -26,27 +26,54 @@ model Routine {
   difficulty      Difficulty
   estimatedMinutes Int
   category        String
-  movements       Movement[]
+  published       Boolean    @default(true)
+  exercises       RoutineExercise[]
   sessions        Session[]
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 }
 
+model Exercise {
+  id               String            @id
+  name             String
+  description      String            @db.Text
+  difficulty       Difficulty
+  estimatedMinutes Int
+  category         String
+  routines         RoutineExercise[]
+  movements        Movement[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model RoutineExercise {
+  routineId  String
+  exerciseId String
+  order      Int
+  routine    Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+
+  @@id([routineId, exerciseId])
+  @@unique([routineId, order])
+  @@index([exerciseId])
+}
+
 model Movement {
   id              String   @id
-  routineId       String
+  exerciseId      String
   order           Int
   name            String
   description     String   @db.Text
   instruction     String   @db.Text
   durationSeconds Int
+  voiceGuide      Json
   tips            Json
-  visual          String
-  routine         Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  image           String
+  exercise        Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   questions       AIQuestion[]
 
-  @@unique([routineId, order])
-  @@index([routineId])
+  @@unique([exerciseId, order])
+  @@index([exerciseId])
 }
 
 model Session {

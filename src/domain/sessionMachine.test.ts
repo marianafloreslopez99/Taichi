@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { routines } from '../infrastructure/routines'
 import { sessionReducer } from './sessionMachine'
+import { flattenRoutineMovements } from './routines'
 
 const routine = routines[0]!
+const movements = flattenRoutineMovements(routine)
 const start = () =>
   sessionReducer(null, { type: 'START', routine, id: 'session-1', at: 100 })!
 
@@ -20,7 +22,7 @@ describe('sessionReducer', () => {
     expect(
       sessionReducer(null, {
         type: 'START',
-        routine: { ...routine, movements: [] },
+        routine: { ...routine, exercises: [] },
         id: 'x',
         at: 1,
       }),
@@ -32,7 +34,7 @@ describe('sessionReducer', () => {
     expect(sessionReducer(first, { type: 'PREVIOUS' })).toBe(first)
     const second = sessionReducer(first, {
       type: 'NEXT',
-      movementCount: routine.movements.length,
+      movementCount: movements.length,
     })!
     expect(second.currentMovementIndex).toBe(1)
     expect(
@@ -55,7 +57,7 @@ describe('sessionReducer', () => {
     expect(
       sessionReducer(asking, {
         type: 'NEXT',
-        movementCount: routine.movements.length,
+        movementCount: movements.length,
       }),
     ).toBe(asking)
     const withQuestion = sessionReducer(asking, {
@@ -63,7 +65,7 @@ describe('sessionReducer', () => {
       question: {
         id: 'q',
         sessionId: asking.id,
-        movementId: routine.movements[0]!.id,
+        movementId: movements[0]!.movement.id,
         question: '¿Cómo?',
         answer: 'Con calma.',
         createdAt: 101,
@@ -80,31 +82,31 @@ describe('sessionReducer', () => {
     expect(
       sessionReducer(session, {
         type: 'COMPLETE',
-        movementCount: routine.movements.length,
+        movementCount: movements.length,
         at: 200,
       }),
     ).toBe(session)
-    for (let i = 1; i < routine.movements.length; i += 1)
+    for (let i = 1; i < movements.length; i += 1)
       session = sessionReducer(session, {
         type: 'NEXT',
-        movementCount: routine.movements.length,
+        movementCount: movements.length,
       })!
     expect(
       sessionReducer(session, {
         type: 'NEXT',
-        movementCount: routine.movements.length,
+        movementCount: movements.length,
       }),
     ).toBe(session)
     const completed = sessionReducer(session, {
       type: 'COMPLETE',
-      movementCount: routine.movements.length,
+      movementCount: movements.length,
       at: 200,
     })!
     expect(completed).toMatchObject({ status: 'COMPLETED', completedAt: 200 })
     expect(
       sessionReducer(completed, {
         type: 'NEXT',
-        movementCount: routine.movements.length,
+        movementCount: movements.length,
       }),
     ).toBe(completed)
     expect(sessionReducer(completed, { type: 'RESUME' })).toBe(completed)

@@ -1,16 +1,31 @@
 import { Link, Navigate, useNavigate } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
 import { useSession } from '../../app/SessionProvider'
-import { getRoutine } from '../../infrastructure/routines'
+import { flattenRoutineMovements } from '../../domain/routines'
+import { api } from '../../infrastructure/api/client'
 import { Icon } from '../components/Icon'
 
 export function SessionSummaryPage() {
   const { session, clear, start } = useSession()
   const navigate = useNavigate()
-  const routine = getRoutine(session?.routineId)
+  const routineQuery = useQuery({
+    queryKey: ['routine', session?.routineId],
+    queryFn: () => api.getRoutine(session!.routineId),
+    enabled: Boolean(session?.routineId),
+  })
+  const routine = routineQuery.data
+  if (routineQuery.isLoading)
+    return (
+      <div className="container empty-state" role="status">
+        <h1>Preparando tu resumen…</h1>
+      </div>
+    )
   if (!session || !routine || session.status !== 'COMPLETED')
     return <Navigate to="/rutinas" replace />
   const restart = () => {
-    void start(routine).then((newSession) => navigate(`/practica/${newSession.routineId}`))
+    void start(routine).then((newSession) =>
+      navigate(`/practica/${newSession.routineId}`),
+    )
   }
   return (
     <div className="container summary-page">
@@ -31,8 +46,8 @@ export function SessionSummaryPage() {
       </p>
       <div className="summary-stats">
         <div>
-          <strong>{routine.movements.length}</strong>
-          <span>movimientos</span>
+          <strong>{routine.exercises.length}</strong>
+          <span>ejercicios</span>
         </div>
         <div>
           <strong>
@@ -58,6 +73,9 @@ export function SessionSummaryPage() {
         </Link>
       </div>
       <p className="summary-end">Gracias por darte este espacio.</p>
+      <span className="sr-only">
+        {flattenRoutineMovements(routine).length} movimientos completados
+      </span>
     </div>
   )
 }

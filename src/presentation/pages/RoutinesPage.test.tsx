@@ -9,13 +9,19 @@ import { RoutinesPage } from './RoutinesPage'
 
 describe('RoutinesPage', () => {
   beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn(async () =>
-      new Response(JSON.stringify({ data: routines }), { status: 200 }),
-    ))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ data: routines }), { status: 200 }),
+      ),
+    )
   })
 
   it('shows all mock routines with accessible links', () => {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
     render(
       <MemoryRouter>
         <QueryClientProvider client={queryClient}>
@@ -25,9 +31,13 @@ describe('RoutinesPage', () => {
         </QueryClientProvider>
       </MemoryRouter>,
     )
-    return screen.findByRole('heading', { name: /elige una rutina/i }).then(() => {
-      expect(screen.getAllByRole('button', { name: /elegir esta rutina/i })).toHaveLength(3)
-      expect(screen.getByText('Fundamentos de taichí')).toBeInTheDocument()
-    })
+    return screen
+      .findByRole('heading', { name: /elige una rutina/i })
+      .then(() => {
+        expect(
+          screen.getAllByRole('button', { name: /elegir esta rutina/i }),
+        ).toHaveLength(1)
+        expect(screen.getByText('Forma básica de taichí')).toBeInTheDocument()
+      })
   })
 })

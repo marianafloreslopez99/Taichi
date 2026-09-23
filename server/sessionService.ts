@@ -50,20 +50,29 @@ async function saveElapsed(prisma: PrismaClient, session: SessionRecord) {
 }
 
 export async function listRoutines(prisma: PrismaClient) {
-  const routines = await prisma.routine.findMany({ include: routineInclude, orderBy: { name: 'asc' } })
+  const routines = await prisma.routine.findMany({
+    where: { published: true },
+    include: routineInclude,
+    orderBy: { name: 'asc' },
+  })
   return routines.map(serializeRoutine)
 }
 
 export async function findRoutine(prisma: PrismaClient, routineId: string) {
-  const routine = await prisma.routine.findUnique({ where: { id: routineId }, include: routineInclude })
+  const routine = await prisma.routine.findFirst({
+    where: { id: routineId, published: true },
+    include: routineInclude,
+  })
   if (!routine) throw new HttpError(404, 'ROUTINE_NOT_FOUND', 'Rutina no encontrada.')
   return serializeRoutine(routine)
 }
 
 export async function createSession(prisma: PrismaClient, routineId: string, replaceSessionId?: string) {
-  const routine = await prisma.routine.findUnique({ where: { id: routineId } })
+  const routine = await prisma.routine.findFirst({ where: { id: routineId, published: true } })
   if (!routine) throw new HttpError(404, 'ROUTINE_NOT_FOUND', 'Rutina no encontrada.')
-  const movementCount = await prisma.movement.count({ where: { routineId } })
+  const movementCount = await prisma.movement.count({
+    where: { exercise: { routines: { some: { routineId } } } },
+  })
   if (movementCount === 0) throw new HttpError(409, 'EMPTY_ROUTINE', 'La rutina no tiene movimientos.')
 
   return prisma.$transaction(async (transaction) => {
@@ -89,7 +98,11 @@ export async function transitionSession(
 ) {
   const initial = await getSession(prisma, id)
   const session = await saveElapsed(prisma, initial)
-  const movementCount = await prisma.movement.count({ where: { routineId: session.routineId } })
+  const movementCount = await prisma.movement.count({
+    where: {
+      exercise: { routines: { some: { routineId: session.routineId } } },
+    },
+  })
   let data: { status?: SessionStatus; currentMovementIndex?: number; completedAt?: Date | null; elapsedSeconds: number }
 
   if (action === 'pause') {
@@ -136,7 +149,12 @@ export async function addQuestion(
 ) {
   const session = await getSession(prisma, sessionId)
   if (session.status !== 'ASKING') throw transitionError('La sesión no está esperando una pregunta.')
-  const movement = await prisma.movement.findFirst({ where: { id: input.movementId, routineId: session.routineId } })
+  const movement = await prisma.movement.findFirst({
+    where: {
+      id: input.movementId,
+      exercise: { routines: { some: { routineId: session.routineId } } },
+    },
+  })
   if (!movement) throw new HttpError(400, 'INVALID_MOVEMENT', 'El movimiento no pertenece a la rutina.')
   await prisma.aIQuestion.create({ data: { id: randomUUID(), sessionId, ...input } })
   const updated = await getSession(prisma, sessionId)

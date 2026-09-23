@@ -25,7 +25,7 @@ export function RoutineCard({
     >
       <div className="routine-card-art">
         <MovementVisual
-          visual={routine.movements[0]?.visual ?? 'opening'}
+          image={routine.exercises[0]?.movements[0]?.image ?? 'opening'}
           compact
         />
         <span className="card-index">0{index + 1}</span>
@@ -37,7 +37,7 @@ export function RoutineCard({
         <div className="routine-meta">
           <span>{routine.estimatedMinutes} min</span>
           <span>{routine.difficulty}</span>
-          <span>{routine.movements.length} movimientos</span>
+          <span>{routine.exercises.length} ejercicios</span>
         </div>
         <button
           className="button button--primary routine-card-action"

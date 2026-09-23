@@ -2,7 +2,14 @@ import type { Routine as DomainRoutine } from '../src/domain/models.js'
 import type { Prisma } from '@prisma/client'
 
 export const routineInclude = {
-  movements: { orderBy: { order: 'asc' as const } },
+  exercises: {
+    orderBy: { order: 'asc' as const },
+    include: {
+      exercise: {
+        include: { movements: { orderBy: { order: 'asc' as const } } },
+      },
+    },
+  },
 } satisfies Prisma.RoutineInclude
 
 export type RoutineRecord = Prisma.RoutineGetPayload<{ include: typeof routineInclude }>
@@ -15,15 +22,47 @@ export function serializeRoutine(routine: RoutineRecord): DomainRoutine {
     difficulty: routine.difficulty,
     estimatedMinutes: routine.estimatedMinutes,
     category: routine.category,
-    movements: routine.movements.map((movement) => ({
-      id: movement.id,
-      order: movement.order,
-      name: movement.name,
-      description: movement.description,
-      instruction: movement.instruction,
-      durationSeconds: movement.durationSeconds,
-      tips: Array.isArray(movement.tips) ? movement.tips.map(String) : [],
-      visual: movement.visual as DomainRoutine['movements'][number]['visual'],
+    exercises: routine.exercises.map(({ exercise, order }) => ({
+      id: exercise.id,
+      order,
+      name: exercise.name,
+      description: exercise.description,
+      difficulty: exercise.difficulty,
+      estimatedMinutes: exercise.estimatedMinutes,
+      category: exercise.category,
+      movements: exercise.movements.map((movement) => {
+        const voiceGuide = Array.isArray(movement.voiceGuide)
+          ? movement.voiceGuide.flatMap((cue) => {
+              if (
+                typeof cue !== 'object' ||
+                cue === null ||
+                !('text' in cue) ||
+                !('pauseAfterMs' in cue)
+              )
+                return []
+              return [
+                {
+                  text: String(cue.text),
+                  pauseAfterMs: Number(cue.pauseAfterMs),
+                },
+              ]
+            })
+          : []
+        return {
+          id: movement.id,
+          order: movement.order,
+          name: movement.name,
+          description: movement.description,
+          instruction: movement.instruction,
+          durationSeconds: movement.durationSeconds,
+          voiceGuide:
+            voiceGuide.length > 0
+              ? voiceGuide
+              : [{ text: movement.instruction, pauseAfterMs: 0 }],
+          tips: Array.isArray(movement.tips) ? movement.tips.map(String) : [],
+          image: movement.image,
+        }
+      }),
     })),
   }
 }
