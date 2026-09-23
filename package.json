@@ -6,9 +6,7 @@
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "vite",
-    "predev:server": "prisma generate",
     "dev:server": "tsx watch server/index.ts",
-    "preserver": "prisma generate",
     "server": "tsx server/index.ts",
     "db:generate": "prisma generate",
     "db:setup": "npm run db:migrate:deploy && npm run db:seed",
