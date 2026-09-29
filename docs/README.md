@@ -4,6 +4,7 @@ Taichi es una aplicación educativa para guiar rutinas de movimiento con apoyo d
 
 ## Mapa de lectura
 
+- [Presentación del proyecto](PRESENTACION_PROYECTO.md): explicación funcional y técnica con fragmentos de código y ubicación de cada módulo.
 - [Arquitectura](ARCHITECTURE.md): capas, dependencias y decisiones.
 - [Reglas de negocio](BUSINESS_RULES.md): invariantes con identificadores.
 - [Flujos de usuario](USER_FLOWS.md): práctica, preguntas y errores.
