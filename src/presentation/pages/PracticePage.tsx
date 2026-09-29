@@ -193,7 +193,7 @@ function PracticeExperience({
           <span>
             <Icon name="spark" />
           </span>
-          <strong>Preguntar a Gemini</strong>
+          <strong>Preguntar a la IA</strong>
           <small>Escribe una duda sobre este movimiento</small>
           <Icon name="arrowRight" />
         </button>

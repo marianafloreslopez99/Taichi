@@ -1,19 +1,28 @@
 :root {
-  --cream: #fff8e8;
-  --cream-deep: #ffedc4;
-  --paper: #fffefa;
-  --sage: #58b887;
-  --sage-light: #d9f3df;
-  --sage-deep: #176a4a;
-  --forest: #164a3b;
-  --forest-soft: #2f6b55;
-  --clay: #d65a2d;
-  --clay-deep: #a83d1d;
-  --clay-light: #ffe0c7;
-  --ink: #17352b;
-  --muted: #4a5d55;
-  --line: #c6d8ca;
-  --error: #a6342b;
+  /* Fondos y neutros renovados */
+  --cream: #ffffff;
+  --cream-deep: #fce7f3; /* Cambiado a un Fucsia pastel suave (ideal para la tarjeta 3) */
+  --paper: #fef9e1;
+
+  /* Tonos Azules (Reemplazan a los verdes anteriores) */
+  --sage: #2563eb;       /* Azul brillante principal */
+  --sage-light: #f8b5d5; /* Azul pastel muy suave (para la tarjeta 1) */
+  --sage-deep: #1e293b;  /* Azul oscuro profundo */
+  --forest: #0f172a;     /* Texto principal oscuro */
+  --forest-soft: #475569;/* Texto secundario */
+
+  /* Tonos Fucsia y Dorado (Reemplazan a los tonos tierra/coral) */
+  --clay: #db2777;       /* Fucsia vibrante */
+  --clay-deep: #be185d;  /* Fucsia oscuro */
+  --clay-light: #fef3c7; /* Dorado / Ámbar pastel muy suave (para la tarjeta 2) */
+
+  /* Textos, líneas y errores */
+  --ink: #0f172a;
+  --muted: #475569;
+  --line: #cbd5e1;
+  --error: #ef4444;
+
+  /* Tipografías y Espacios (Tus originales intactos) */
   --font-display: 'DM Serif Display', Georgia, serif;
   --font-body: 'DM Sans', sans-serif;
   --space-1: 4px;
@@ -28,5 +37,5 @@
   --radius-sm: 12px;
   --radius-md: 20px;
   --radius-lg: 28px;
-  --shadow-soft: 0 20px 70px rgb(22 74 59 / 15%);
+  --shadow-soft: 0 20px 70px rgb(37 99 235 / 12%);
 }

@@ -66,7 +66,7 @@
               "pauseAfterMs": 0
             }
           ],
-          "image": "legs",
+          "image": "wlegs",
           "tips": [
             "No juntes demasiado los pies.",
             "Mantén una postura cómoda."
@@ -85,7 +85,7 @@
               "pauseAfterMs": 0
             }
           ],
-          "image": "balance",
+          "image": "wbalance",
           "tips": [
             "Mantén el peso en una sola pierna.",
             "Hazlo lentamente para evitar perder el equilibrio."

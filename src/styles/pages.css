@@ -88,6 +88,7 @@
   gap: 12px;
 }
 .hero-art-label {
+
   width: 70%;
   align-self: center;
   margin-top: 65px;
@@ -366,7 +367,8 @@
   position: relative;
   height: 410px;
   overflow: hidden;
-  background: var(--sage-light);
+  background: #fff58b;
+  padding: 17px;
   border-radius: var(--radius-lg);
 }
 .practice-art .movement-visual {
@@ -494,7 +496,7 @@
   transition: background 0.2s;
 }
 .control-button:hover:not(:disabled) {
-  background: var(--cream);
+  background: rgb(127, 188, 235);
 }
 .control-button svg {
   width: 30px;
@@ -502,10 +504,10 @@
 }
 .control-button--main {
   color: var(--paper);
-  background: var(--forest);
+  background: rgb(255, 182, 55) ;
 }
 .control-button--main:hover:not(:disabled) {
-  background: var(--sage-deep);
+  background: rgb(127, 188, 235);
 }
 .voice-cta {
   display: grid;

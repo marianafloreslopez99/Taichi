@@ -28,6 +28,23 @@ export class MockTextToSpeechAdapter implements TextToSpeechService {
       const utterance = new SpeechSynthesisUtterance(text)
       utterance.lang = 'es-MX'
       utterance.rate = 0.88
+      const voices = window.speechSynthesis.getVoices()
+
+      // Seleccionar la voz deseada
+      const voice = voices.find(
+        v => v.name.includes('Dalia') && v.lang === 'es-MX'
+      )
+
+      if (voice) {
+        utterance.voice = voice
+      }
+
+      utterance.onend = () => {
+        this.utterance = null
+        this.resolvePending = null
+        resolve()
+      }
+
       utterance.onend = () => {
         this.utterance = null
         this.resolvePending = null

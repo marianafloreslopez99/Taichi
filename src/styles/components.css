@@ -174,13 +174,13 @@
   position: relative;
   height: 208px;
   overflow: hidden;
-  background: #bfeecb;
+  background: #f770b3;
 }
 .routine-card:nth-child(2) .routine-card-art {
-  background: #ffd0ae;
+  background: #ffdd56;
 }
 .routine-card:nth-child(3) .routine-card-art {
-  background: #ffe89f;
+  background: #2ca0e8;
 }
 .card-index {
   position: absolute;
@@ -393,5 +393,13 @@
   }
   .page-intro p {
     font-size: 18px;
+  }
+
+  .movement-visual {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    min-height: 0;
   }
 }
