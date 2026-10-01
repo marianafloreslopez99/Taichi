@@ -24,7 +24,7 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Coloca los pies separados y adopta una postura cómoda.",
+              "text": "Buenos días, comencemos con tus ejercicios. En Apertura, coloca los pies separados y adopta una postura cómoda.",
               "pauseAfterMs": 3000,
               "image": "1.jpg"
             },
