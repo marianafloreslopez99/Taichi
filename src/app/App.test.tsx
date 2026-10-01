@@ -245,8 +245,12 @@ describe('practice journey', () => {
     await screen.findByRole('heading', {
       name: 'Grulla Blanca Extiende las Alas',
     })
+    const stopsBeforeFinish = stopNarration.mock.calls.length
+    const narrationCallsBeforeFinish = speak.mock.calls.length
     say('Finalizar')
+    expect(stopNarration.mock.calls.length).toBeGreaterThan(stopsBeforeFinish)
     await waitFor(() => expect(window.location.pathname).toBe('/resumen'))
     expect(session.status).toBe('COMPLETED')
+    expect(speak).toHaveBeenCalledTimes(narrationCallsBeforeFinish)
   })
 })

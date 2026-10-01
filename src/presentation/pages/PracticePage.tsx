@@ -44,6 +44,7 @@ function PracticeExperience({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const narrationRef = useRef<AbortController | null>(null)
   const commandPendingRef = useRef(false)
+  const finishingRef = useRef(false)
   const askingRef = useRef(false)
   const closingRef = useRef<Promise<void> | null>(null)
   const wakeDeadlineRef = useRef(0)
@@ -66,7 +67,7 @@ function PracticeExperience({
   }, [])
 
   const startNarration = useCallback(() => {
-    if (!movement) return
+    if (!movement || finishingRef.current) return
     stopNarration()
     const controller = new AbortController()
     narrationRef.current = controller
@@ -154,10 +155,20 @@ function PracticeExperience({
         setVoiceNotice('Puedes finalizar cuando llegues al último movimiento.')
         return
       }
+      finishingRef.current = true
+      clearWake()
+      mic.suspendNow()
       stopNarration()
-      task = actions.complete().then(() => {
-        navigate('/resumen')
-      })
+      task = actions
+        .complete()
+        .then(() => {
+          navigate('/resumen')
+        })
+        .catch((error: unknown) => {
+          finishingRef.current = false
+          mic.retry()
+          throw error
+        })
     } else if (command === 'previous' && session.currentMovementIndex > 0) {
       stopNarration()
       task = actions.previous()
@@ -287,8 +298,7 @@ function PracticeExperience({
               reconnecting: 'Intentando recuperar la conexión de voz.',
               suspended: 'La escucha se reanudará al volver a la práctica.',
               blocked: 'Revisa el permiso del navegador e inténtalo de nuevo.',
-              unsupported:
-                'Usa los controles y el botón para preguntar a IA.',
+              unsupported: 'Usa los controles y el botón para preguntar a IA.',
             }[mic.status],
           }
 
@@ -403,7 +413,10 @@ function PracticeExperience({
             )}
             {mic.status === 'listening' && (
               <span className="voice-console-hint">
-                Pausar · Repetir · Siguiente · Finalizar
+                Pausar · Repetir · Siguiente
+                {session.currentMovementIndex === steps.length - 1
+                  ? ' · Finalizar'
+                  : ''}
               </span>
             )}
           </div>
