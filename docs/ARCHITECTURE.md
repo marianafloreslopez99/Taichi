@@ -12,18 +12,21 @@ flowchart TB
   C --> A
 ```
 
-El dominio no importa React ni APIs del navegador. `sessionMachine.ts` valida acciones y preserva invariantes; puede probarse con datos simples. Aplicación define `AIQuestionService`, `TextToSpeechService` y la secuencia `runTextQuestionFlow`; el puerto STT queda disponible para una fase de voz futura. Infraestructura implementa esos contratos. Presentación utiliza un contexto solo para compartir sesión entre rutas de práctica y resumen; los controles visuales reciben propiedades y no conocen proveedores.
+El dominio no importa React ni APIs del navegador. `sessionMachine.ts` valida acciones y preserva invariantes; puede probarse con datos simples. Aplicación define los puertos de reconocimiento, Gemini y síntesis de voz; `runQuestionFlow` transcribe y reutiliza `runTextQuestionFlow` para enviar la pregunta y narrar la respuesta. Infraestructura implementa esos contratos. Presentación utiliza un contexto solo para compartir sesión entre rutas de práctica y resumen; los controles visuales reciben propiedades y no conocen proveedores.
 
 ```mermaid
 sequenceDiagram
   participant UI as PracticePage
   participant Hook as useAIQuestion
-  participant Flow as runTextQuestionFlow
+  participant STT as SpeechRecognition
+  participant Flow as runQuestionFlow
   participant API as API Express
   participant LLM as Gemini 3.5 Flash
   participant DB as MySQL
   participant TTS as TextToSpeechService
-  UI->>Hook: enviar pregunta escrita
+  UI->>Hook: preguntar por voz
+  Hook->>STT: escuchar en español
+  STT-->>Hook: texto reconocido
   Hook->>Flow: pregunta + IDs opacos
   Flow->>API: POST /sessions/:id/questions
   API->>DB: validar sesión y movimiento

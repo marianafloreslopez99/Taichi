@@ -24,12 +24,39 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Coloca los pies al ancho de los hombros. Eleva los brazos lentamente mientras inhalas y bájalos al exhalar. Mantén las palmas hacia abajo y los brazos separados al ancho de los hombros.",
-              "pauseAfterMs": 0
+              "text": "Coloca los pies al ancho de los hombros y adopta una postura cómoda.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Deja los brazos relajados a los lados del cuerpo.",
+              "pauseAfterMs": 2500
+            },
+            {
+              "text": "Comienza a elevar los brazos lentamente mientras inhalas.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Continúa hasta llevar las manos aproximadamente a la altura de los hombros.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Mantén las palmas hacia abajo y los brazos separados al ancho de los hombros.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora relaja los codos y deja que los brazos bajen suavemente mientras exhalas.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Muy bien. Repite el movimiento lentamente, coordinando la respiración con los brazos.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "opening",
-          "tips": ["Mantén la espalda erguida.", "Relaja los hombros."]
+          "tips": [
+            "Mantén la espalda erguida.",
+            "Relaja los hombros."
+          ]
         },
         {
           "id": "crin-brazos",
@@ -40,8 +67,36 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Sostén una pelota imaginaria frente al pecho. La mano que está arriba baja mientras la mano de abajo sube. Al mismo tiempo, cambia el peso hacia el lado de la mano que sube.",
-              "pauseAfterMs": 0
+              "text": "Comienza imaginando que sostienes una pelota grande frente al pecho.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Mantén una mano arriba, aproximadamente a la altura del pecho, y la otra debajo del ombligo.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Ahora, la mano que está arriba comienza a bajar mientras la mano de abajo sube.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Al mismo tiempo, cambia lentamente el peso hacia el lado de la mano que está subiendo.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Cuando llegues al lado, relaja los brazos y vuelve a formar la pelota frente al cuerpo.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Ahora cambia las manos y lleva el peso hacia el lado contrario.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Regresa al centro y vuelve a formar la pelota.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Muy bien. Repite el movimiento de un lado al otro de manera lenta y coordinada.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "horse",
@@ -59,8 +114,32 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Comienza con las manos como si sostuvieras una pelota. Una mano sube mientras la otra baja y el peso cambia hacia un lado. Regresa al centro y repite hacia el otro lado.",
-              "pauseAfterMs": 0
+              "text": "Comienza con las manos como si sostuvieras una pelota grande frente al cuerpo.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora, cambia lentamente el peso hacia un lado.",
+              "pauseAfterMs": 2500
+            },
+            {
+              "text": "Mientras cambias el peso, deja que una mano suba y la otra baje suavemente.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Mantén la mano que sube hacia el frente y la otra más cerca del cuerpo.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Regresa lentamente al centro y vuelve a formar la pelota con las manos.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Ahora cambia el peso hacia el otro lado y repite el movimiento.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Muy bien. Mantén los brazos relajados y realiza el movimiento sin tensión.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "crane",
@@ -78,8 +157,32 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Lleva una mano cerca de la oreja y la otra hacia la cadera. Cambia el peso hacia adelante mientras extiendes una mano como si empujaras suavemente. Cambia las manos y repite.",
-              "pauseAfterMs": 0
+              "text": "Comienza llevando una mano cerca de la oreja y la otra hacia la cadera.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora, cambia lentamente el peso hacia adelante.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Mientras avanzas, extiende la mano que está cerca de la oreja como si empujaras suavemente.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Mantén los dedos apuntando hacia adelante y realiza el movimiento sin forzar la rodilla.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Regresa lentamente y cambia las manos de posición.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Repite el movimiento hacia el otro lado.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Muy bien. Mantén los hombros relajados y acompaña el movimiento con una respiración tranquila.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "brush",
@@ -97,8 +200,28 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Eleva una mano mientras la otra se mueve hacia atrás. Cambia el peso suavemente y coloca ambas manos frente al cuerpo, como si sostuvieras un instrumento.",
-              "pauseAfterMs": 0
+              "text": "Comienza elevando una mano mientras la otra se mueve suavemente hacia atrás.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora, cambia el peso de manera lenta y controlada.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Lleva las manos frente al cuerpo, como si sostuvieras un instrumento.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Mantén las manos delante del cuerpo y deja los hombros relajados.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora cambia la posición de las manos y repite el movimiento hacia el otro lado.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Muy bien. Realiza el movimiento lentamente y sin tensión en los brazos.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "lute",

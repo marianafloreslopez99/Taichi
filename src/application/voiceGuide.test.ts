@@ -3,6 +3,25 @@ import type { TextToSpeechService } from './ports'
 import { playVoiceGuide } from './voiceGuide'
 
 describe('playVoiceGuide', () => {
+  it('announces the matching image before speaking and stops cue updates on abort', async () => {
+    const controller = new AbortController()
+    const onCue = vi.fn()
+    const guide = [
+      { text: 'Primera', pauseAfterMs: 0, image: '1.jpg' },
+      { text: 'Segunda', pauseAfterMs: 0, image: '2.jpg' },
+    ]
+    const tts: TextToSpeechService = {
+      speak: vi.fn(async () => {
+        expect(onCue).toHaveBeenCalledWith(guide[0], 0)
+        controller.abort()
+      }),
+      stop: vi.fn(),
+    }
+    await playVoiceGuide(guide, tts, controller.signal, onCue)
+    expect(onCue).toHaveBeenCalledTimes(1)
+    expect(tts.speak).toHaveBeenCalledTimes(1)
+  })
+
   it('narrates every cue in order', async () => {
     const tts: TextToSpeechService = {
       speak: vi.fn().mockResolvedValue(undefined),

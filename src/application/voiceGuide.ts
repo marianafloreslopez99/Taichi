@@ -19,9 +19,11 @@ export async function playVoiceGuide(
   guide: VoiceCue[],
   tts: TextToSpeechService,
   signal: AbortSignal,
+  onCue?: (cue: VoiceCue, index: number) => void,
 ) {
-  for (const cue of guide) {
+  for (const [index, cue] of guide.entries()) {
     if (signal.aborted) return
+    onCue?.(cue, index)
     await tts.speak(cue.text)
     if (signal.aborted) return
     await waitForPause(cue.pauseAfterMs, signal)

@@ -17,6 +17,10 @@ const text = z.string().trim().min(1)
 const voiceCueSchema = z.strictObject({
   text,
   pauseAfterMs: z.number().int().min(0).max(30_000),
+  image: z
+    .string()
+    .regex(/^[a-zA-Z0-9_-]+\.(?:jpg|jpeg|png|webp)$/)
+    .optional(),
 })
 
 const movementSchema = z.strictObject({

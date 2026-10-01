@@ -2,7 +2,10 @@
 
 ```mermaid
 flowchart LR
-  M[Pregunta escrita] --> Q[runTextQuestionFlow]
+  M[Pregunta hablada] --> R[SpeechRecognition del navegador]
+  R --> Q[runQuestionFlow]
+  E[Pregunta escrita] --> W[runTextQuestionFlow]
+  W --> P
   Q --> P[POST /api/v1/sessions/:id/questions]
   P --> L[Gemini Interactions API]
   L --> D[(MySQL)]
@@ -18,6 +21,6 @@ La clave se lee como `GEMINI_API_KEY`; por compatibilidad también se acepta la 
 
 Una respuesta 429 se presenta como un error recuperable. El servidor distingue entre un límite temporal (`AI_RATE_LIMITED`) y una cuota diaria agotada (`AI_DAILY_QUOTA_EXHAUSTED`), sin exponer detalles internos del proveedor. Las cuotas diarias de Gemini se aplican por proyecto y se reinician a medianoche, hora del Pacífico. Para usar otro modelo autorizado, cambie `GEMINI_MODEL` sin modificar código.
 
-La entrada principal es un campo de texto accesible; no se solicita permiso ni se graba audio. `MockTextToSpeechAdapter` usa `speechSynthesis` del navegador como mejora progresiva. Las preguntas y respuestas completadas se guardan juntas en MySQL mediante `POST /api/v1/sessions/:sessionId/questions`.
+Durante la práctica, `ContinuousSpeechRecognition` mantiene el reconocimiento del navegador activo y lo reinicia tras inactividad o errores de red. `parseVoiceIntent` acepta comandos aislados y solo deriva preguntas a Gemini si comienzan con «Oye» o «Tengo una duda»; una activación sin pregunta espera la siguiente frase durante diez segundos. Mientras Gemini procesa y narra, se suspende la escucha de comandos; al terminar la respuesta se reactiva solo para aceptar «Continuar». El botón de pregunta usa `BrowserSpeechToTextAdapter` para escuchar una sola duda; también se puede escribir. El audio puede procesarse en un servicio del navegador; la aplicación envía al backend solo el texto reconocido después de la activación. `BrowserTextToSpeechAdapter` usa `speechSynthesis` para leer la respuesta. Las preguntas y respuestas completadas se guardan juntas en MySQL mediante `POST /api/v1/sessions/:sessionId/questions`.
 
 El prompt del servidor limita la respuesta a orientación educativa breve, rechaza cambios de instrucciones y evita diagnósticos. Las preguntas de salud activan un aviso profesional. El flujo conserva la respuesta escrita si TTS falla; un fallo del LLM es recuperable y no destruye la sesión. `AbortController` y `stop()` cancelan solicitudes o narraciones al cerrar el panel.

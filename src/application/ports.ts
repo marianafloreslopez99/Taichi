@@ -17,7 +17,11 @@ export interface AIResponse {
 }
 
 export interface SpeechToTextService {
-  transcribe(audio: Blob): Promise<string>
+  listen(
+    signal?: AbortSignal,
+    onInterim?: (text: string) => void,
+  ): Promise<string>
+  stop(): void
 }
 
 export interface AIQuestionService {

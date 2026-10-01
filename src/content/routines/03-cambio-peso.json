@@ -24,8 +24,32 @@
           "durationSeconds": 140,
           "voiceGuide": [
             {
-              "text": "Coloca los pies paralelos y separados. Distribuye el peso entre ambas piernas. Empuja suavemente con una pierna para llevar el peso hacia el otro lado y deja que la pelvis acompañe el movimiento.",
-              "pauseAfterMs": 0
+              "text": "Coloca los pies paralelos y separados, adoptando una postura cómoda.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Distribuye el peso entre ambas piernas y mantén las rodillas relajadas.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora, empuja suavemente con una pierna para llevar el peso hacia el otro lado.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Deja que la pelvis acompañe el movimiento de manera natural.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Regresa lentamente al centro y vuelve a distribuir el peso entre las dos piernas.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Ahora lleva el peso hacia el lado contrario de la misma manera.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Muy bien. Mantén las rodillas relajadas y evita girarlas hacia dentro.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "pesohorse",
@@ -43,8 +67,28 @@
           "durationSeconds": 140,
           "voiceGuide": [
             {
-              "text": "Después de llevar el peso hacia un lado, relaja el cuerpo y permite que el peso vuelva al centro. Repite lentamente hacia el lado contrario.",
-              "pauseAfterMs": 0
+              "text": "Comienza llevando el peso lentamente hacia un lado.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Cuando estés cómodo, relaja el cuerpo y permite que el peso vuelva al centro.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Quédate un momento en el centro y busca una distribución cómoda del peso.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Ahora lleva lentamente el peso hacia el lado contrario.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Relaja el cuerpo y regresa nuevamente al centro.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Muy bien. Repite el cambio de un lado al otro sin tener prisa.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "balance",
@@ -62,8 +106,32 @@
           "durationSeconds": 140,
           "voiceGuide": [
             {
-              "text": "Coloca un pie adelante y el otro atrás formando una posición de arco. Cambia el peso hacia la pierna delantera y después regresa al centro para llevarlo hacia la pierna trasera.",
-              "pauseAfterMs": 0
+              "text": "Coloca un pie adelante y el otro atrás, formando una posición de arco.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Asegúrate de que el pie delantero apunte hacia adelante y adopta una postura cómoda.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Ahora, cambia lentamente el peso hacia la pierna delantera.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Deja que la pelvis acompañe el movimiento y mantén el cuerpo relajado.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Regresa lentamente hacia el centro.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora lleva el peso hacia la pierna trasera.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Muy bien. Repite el cambio de peso lentamente, acompañando el movimiento con la pelvis.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "bow",

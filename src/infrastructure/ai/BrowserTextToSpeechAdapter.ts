@@ -1,18 +1,6 @@
-import type {
-  SpeechToTextService,
-  TextToSpeechService,
-} from '../../application/ports'
-import { delay, MOCK_TIMING } from './mockTiming'
+import type { TextToSpeechService } from '../../application/ports'
 
-export class MockSpeechToTextAdapter implements SpeechToTextService {
-  async transcribe(_audio: Blob): Promise<string> {
-    void _audio
-    await delay(MOCK_TIMING.transcription)
-    return '¿Qué tan flexionadas deben estar mis rodillas?'
-  }
-}
-
-export class MockTextToSpeechAdapter implements TextToSpeechService {
+export class BrowserTextToSpeechAdapter implements TextToSpeechService {
   private utterance: SpeechSynthesisUtterance | null = null
   private resolvePending: (() => void) | null = null
 
@@ -22,7 +10,9 @@ export class MockTextToSpeechAdapter implements TextToSpeechService {
       !('speechSynthesis' in window) ||
       !('SpeechSynthesisUtterance' in window)
     ) {
-      return delay(MOCK_TIMING.speakingFallback)
+      return Promise.reject(
+        new Error('Este navegador no puede reproducir voz.'),
+      )
     }
     return new Promise<void>((resolve, reject) => {
       const utterance = new SpeechSynthesisUtterance(text)
@@ -30,19 +20,16 @@ export class MockTextToSpeechAdapter implements TextToSpeechService {
       utterance.rate = 0.88
       const voices = window.speechSynthesis.getVoices()
 
-      // Seleccionar la voz deseada
-      const voice = voices.find(
-        v => v.name.includes('Dalia') && v.lang === 'es-MX'
-      )
+      const voice =
+        voices.find(
+          (candidate) =>
+            candidate.name.includes('Dalia') && candidate.lang === 'es-MX',
+        ) ??
+        voices.find((candidate) => candidate.lang === 'es-MX') ??
+        voices.find((candidate) => candidate.lang.startsWith('es'))
 
       if (voice) {
         utterance.voice = voice
-      }
-
-      utterance.onend = () => {
-        this.utterance = null
-        this.resolvePending = null
-        resolve()
       }
 
       utterance.onend = () => {

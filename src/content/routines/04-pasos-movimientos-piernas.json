@@ -24,8 +24,32 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Lleva el peso hacia una pierna y permite que la otra quede libre. Gira suavemente el pie y desplázalo hacia el lado. Coloca primero el talón y después la planta del pie.",
-              "pauseAfterMs": 0
+              "text": "Comienza con una postura cómoda y estable.",
+              "pauseAfterMs": 2500
+            },
+            {
+              "text": "Lleva el peso hacia una pierna y permite que la otra quede libre.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora, gira suavemente el pie que quedó libre y desplázalo hacia un lado.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Coloca primero el talón y después apoya lentamente la planta del pie.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Cambia el peso poco a poco hacia el pie que acabas de colocar.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Regresa con calma y repite el paso hacia el otro lado.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Muy bien. Mantén el peso bajo y estable durante todo el movimiento.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "legs",
@@ -43,8 +67,28 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Desde una posición estable, lleva el pie hacia adelante y ligeramente hacia un lado. Coloca primero el talón y después la planta. Cambia el peso lentamente hacia la pierna delantera.",
-              "pauseAfterMs": 0
+              "text": "Comienza desde una posición estable y cómoda.",
+              "pauseAfterMs": 2500
+            },
+            {
+              "text": "Lleva un pie hacia adelante y ligeramente hacia un lado.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Coloca primero el talón y después apoya lentamente la planta del pie.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Ahora, cambia el peso poco a poco hacia la pierna delantera.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Mantén el movimiento controlado y evita avanzar demasiado rápido.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Muy bien. Recuerda mantener el pie delantero apuntando hacia adelante.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "bow",
@@ -62,8 +106,28 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Lleva un pie hacia adelante hasta conseguir aproximadamente el ancho de tus hombros. Coloca el talón primero y después la planta. Cambia el peso de manera gradual.",
-              "pauseAfterMs": 0
+              "text": "Comienza desde una posición cómoda y estable.",
+              "pauseAfterMs": 2500
+            },
+            {
+              "text": "Lleva un pie hacia adelante hasta conseguir aproximadamente el ancho de tus hombros.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Coloca primero el talón y después apoya la planta del pie.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Asegúrate de que tus pies no queden demasiado juntos.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora, cambia el peso de manera gradual hacia el pie delantero.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Muy bien. Mantén una postura cómoda y estable.",
+              "pauseAfterMs": 3500
             }
           ],
           "image": "wlegs",
@@ -81,8 +145,32 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Lleva el peso completamente hacia una pierna. La otra queda libre y con muy poco peso, permitiendo levantar suavemente la punta o el talón sin perder la estabilidad.",
-              "pauseAfterMs": 0
+              "text": "Comienza con los dos pies apoyados y una postura cómoda.",
+              "pauseAfterMs": 2500
+            },
+            {
+              "text": "Lleva lentamente el peso hacia una sola pierna.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Deja que la otra pierna quede libre y con muy poco peso.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Ahora, levanta suavemente la punta o el talón del pie que quedó libre.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Mantén el equilibrio y evita hacer movimientos bruscos.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Regresa lentamente el pie al suelo y cambia el peso hacia la otra pierna.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Muy bien. Hazlo lentamente y busca mantener una posición estable.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "wbalance",

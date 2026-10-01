@@ -17,7 +17,10 @@ const context = {
   instruction: 'Respira.',
 }
 const services = (): VoiceServices => ({
-  stt: { transcribe: vi.fn().mockResolvedValue('¿Cómo respiro?') },
+  stt: {
+    listen: vi.fn().mockResolvedValue('¿Cómo respiro?'),
+    stop: vi.fn(),
+  },
   ai: { ask: vi.fn().mockResolvedValue({ text: 'Con calma.' }) },
   tts: { speak: vi.fn().mockResolvedValue(undefined), stop: vi.fn() },
 })
@@ -33,7 +36,7 @@ describe('runTextQuestionFlow', () => {
       (status) => states.push(status),
     )
 
-    expect(deps.stt.transcribe).not.toHaveBeenCalled()
+    expect(deps.stt.listen).not.toHaveBeenCalled()
     expect(deps.ai.ask).toHaveBeenCalledWith(
       { ...context, question: '¿Cómo coordino los brazos?' },
       undefined,
@@ -55,11 +58,8 @@ describe('runQuestionFlow', () => {
   it('runs STT, LLM and TTS in order with movement context', async () => {
     const deps = services()
     const states: AIInteractionStatus[] = []
-    const result = await runQuestionFlow(
-      context,
-      deps,
-      (status) => states.push(status),
-      async () => new Blob(),
+    const result = await runQuestionFlow(context, deps, (status) =>
+      states.push(status),
     )
     expect(states).toEqual([
       'LISTENING',
@@ -81,104 +81,75 @@ describe('runQuestionFlow', () => {
 
   it('does not send an empty transcription to the LLM', async () => {
     const deps = services()
-    vi.mocked(deps.stt.transcribe).mockResolvedValue('  ')
+    vi.mocked(deps.stt.listen).mockResolvedValue('  ')
     await expect(
-      runQuestionFlow(
-        context,
-        deps,
-        () => {},
-        async () => new Blob(),
-      ),
+      runQuestionFlow(context, deps, () => {}),
     ).rejects.toBeInstanceOf(QuestionFlowError)
     expect(deps.ai.ask).not.toHaveBeenCalled()
   })
 
   it('keeps STT and LLM errors recoverable', async () => {
     const deps = services()
-    vi.mocked(deps.stt.transcribe).mockRejectedValueOnce(new Error('offline'))
+    vi.mocked(deps.stt.listen).mockRejectedValueOnce(new Error('offline'))
     await expect(
-      runQuestionFlow(
-        context,
-        deps,
-        () => {},
-        async () => new Blob(),
-      ),
+      runQuestionFlow(context, deps, () => {}),
     ).rejects.toMatchObject({ stage: 'STT' })
     vi.mocked(deps.ai.ask).mockRejectedValueOnce(new Error('offline'))
     await expect(
-      runQuestionFlow(
-        context,
-        deps,
-        () => {},
-        async () => new Blob(),
-      ),
+      runQuestionFlow(context, deps, () => {}),
     ).rejects.toMatchObject({ stage: 'LLM' })
   })
 
   it('retains the textual answer if TTS fails', async () => {
     const deps = services()
     vi.mocked(deps.tts.speak).mockRejectedValue(new Error('no voice'))
-    const result = await runQuestionFlow(
-      context,
-      deps,
-      () => {},
-      async () => new Blob(),
-    )
+    const result = await runQuestionFlow(context, deps, () => {})
     expect(result).toMatchObject({
       response: { text: 'Con calma.' },
       audioError: true,
     })
   })
 
-  it('stops before STT when a question is cancelled', async () => {
+  it('stops before sending to Gemini when listening is cancelled', async () => {
     const deps = services()
     const controller = new AbortController()
-    const listen = async () => {
+    vi.mocked(deps.stt.listen).mockImplementationOnce(async () => {
       controller.abort()
-      return new Blob()
-    }
+      return '¿Cómo respiro?'
+    })
     await expect(
       runQuestionFlow(
         context,
         deps,
         () => {},
-        listen,
         undefined,
         undefined,
         controller.signal,
       ),
     ).rejects.toMatchObject({ name: 'AbortError' })
-    expect(deps.stt.transcribe).not.toHaveBeenCalled()
+    expect(deps.ai.ask).not.toHaveBeenCalled()
   })
 
-  it('maps denied and unavailable microphone errors without calling STT', async () => {
+  it('maps denied and unavailable microphone errors without calling Gemini', async () => {
     const deps = services()
+    vi.mocked(deps.stt.listen).mockRejectedValueOnce(
+      new DOMException('denied', 'NotAllowedError'),
+    )
     await expect(
-      runQuestionFlow(
-        context,
-        deps,
-        () => {},
-        async () => {
-          throw new DOMException('denied', 'NotAllowedError')
-        },
-      ),
+      runQuestionFlow(context, deps, () => {}),
     ).rejects.toMatchObject({
       stage: 'MICROPHONE',
       message: expect.stringContaining('permiso'),
     })
+    vi.mocked(deps.stt.listen).mockRejectedValueOnce(
+      new DOMException('missing', 'NotFoundError'),
+    )
     await expect(
-      runQuestionFlow(
-        context,
-        deps,
-        () => {},
-        async () => {
-          throw new DOMException('missing', 'NotFoundError')
-        },
-      ),
+      runQuestionFlow(context, deps, () => {}),
     ).rejects.toMatchObject({
       stage: 'MICROPHONE',
       message: expect.stringContaining('micrófono disponible'),
     })
-    expect(deps.stt.transcribe).not.toHaveBeenCalled()
+    expect(deps.ai.ask).not.toHaveBeenCalled()
   })
 })

@@ -83,6 +83,7 @@ async function main() {
           (cue): Prisma.InputJsonObject => ({
             text: cue.text,
             pauseAfterMs: cue.pauseAfterMs,
+            ...(cue.image ? { image: cue.image } : {}),
           }),
         )
         await prisma.movement.upsert({

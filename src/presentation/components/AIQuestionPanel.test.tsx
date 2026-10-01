@@ -18,13 +18,15 @@ describe('AIQuestionPanel', () => {
         requiresProfessionalAdvice={false}
         onClose={vi.fn()}
         onSubmit={onSubmit}
+        onListen={vi.fn()}
+        onStopListening={vi.fn()}
         onReplay={vi.fn()}
         onContinue={vi.fn()}
       />,
     )
 
     const input = screen.getByLabelText(/escribe tu duda/i)
-    const submit = screen.getByRole('button', { name: /preguntar a gemini/i })
+    const submit = screen.getByRole('button', { name: /preguntar a ia/i })
     expect(submit).toBeDisabled()
     await user.type(input, '¿Cómo debo respirar?')
     await user.click(submit)

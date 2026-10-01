@@ -88,7 +88,6 @@
   gap: 12px;
 }
 .hero-art-label {
-
   width: 70%;
   align-self: center;
   margin-top: 65px;
@@ -338,6 +337,143 @@
   font: 36px/1.1 var(--font-display);
   margin: 6px 0 0;
 }
+.voice-console {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 112px;
+  margin-top: 22px;
+  padding: 19px 24px;
+  border: 1px solid rgb(37 99 235 / 12%);
+  border-radius: var(--radius-md);
+  background: linear-gradient(110deg, #eef4ff, #fff7fa 85%);
+  box-shadow: 0 12px 35px rgb(15 23 42 / 5%);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+.voice-console--listening {
+  border-color: rgb(37 99 235 / 32%);
+  background: linear-gradient(110deg, #e7efff, #fff5fa 85%);
+}
+.voice-console--wake,
+.voice-console--question {
+  border-color: rgb(219 39 119 / 35%);
+  background: linear-gradient(110deg, #fff1f7, #fff8e8 90%);
+}
+.voice-console--off,
+.voice-console--blocked,
+.voice-console--unsupported {
+  background: #f5f6f8;
+  border-color: var(--line);
+}
+.voice-console--off .voice-console-icon,
+.voice-console--blocked .voice-console-icon,
+.voice-console--unsupported .voice-console-icon {
+  color: var(--muted);
+}
+.voice-console-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  flex: none;
+  border-radius: 20px;
+  background: var(--cream);
+  color: var(--sage);
+  box-shadow: 0 8px 24px rgb(37 99 235 / 13%);
+}
+.voice-console--wake .voice-console-icon,
+.voice-console--question .voice-console-icon {
+  color: var(--clay-deep);
+  box-shadow: 0 8px 24px rgb(219 39 119 / 12%);
+}
+.voice-console-icon > svg {
+  width: 30px;
+  height: 30px;
+}
+.voice-console-signal {
+  position: absolute;
+  right: -8px;
+  bottom: -5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 29px;
+  height: 29px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.voice-console--listening .voice-console-signal {
+  background: var(--sage);
+}
+.voice-console--wake .voice-console-signal {
+  background: var(--clay);
+}
+.voice-console-signal i {
+  width: 2px;
+  height: 7px;
+  border-radius: 2px;
+  background: #fff;
+}
+.voice-console--listening .voice-console-signal i:nth-child(2),
+.voice-console--wake .voice-console-signal i:nth-child(2) {
+  animation: voice-signal 0.8s ease-in-out infinite alternate;
+}
+.voice-console-copy {
+  min-width: 0;
+  flex: 1;
+}
+.voice-console-eyebrow {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--clay-deep);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.voice-console-copy strong {
+  display: block;
+  color: var(--forest);
+  font: 26px/1.1 var(--font-display);
+}
+.voice-console-copy p {
+  margin: 5px 0 0;
+  color: var(--forest-soft);
+  font-size: 14px;
+  line-height: 1.4;
+}
+.voice-console-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+}
+.voice-console-toggle {
+  min-width: 164px;
+  min-height: 43px;
+  padding: 9px 15px;
+  border: 1px solid var(--sage-deep);
+  border-radius: 12px;
+  background: var(--cream);
+  color: var(--forest);
+  font: 700 14px var(--font-body);
+  cursor: pointer;
+}
+.voice-console-toggle:hover,
+.voice-console-toggle:focus-visible {
+  background: var(--forest);
+  color: #fff;
+}
+.voice-console-hint {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
 .leave-link {
   display: inline-flex;
   align-items: center;
@@ -399,6 +535,9 @@
   flex-direction: column;
   justify-content: center;
   animation: rise-in 0.35s both;
+}
+.practice-page--asking .practice-main * {
+  animation-play-state: paused;
 }
 .practice-content h2 {
   font-size: clamp(56px, 6vw, 82px);
@@ -504,7 +643,7 @@
 }
 .control-button--main {
   color: var(--paper);
-  background: rgb(255, 182, 55) ;
+  background: rgb(255, 182, 55);
 }
 .control-button--main:hover:not(:disabled) {
   background: rgb(127, 188, 235);
@@ -591,6 +730,27 @@
   width: 17px;
   color: var(--clay);
 }
+.ai-guide-paused {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 10px auto 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fff0f6;
+  color: var(--clay-deep);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.ai-guide-paused svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
 .icon-button {
   width: 35px;
   height: 35px;
@@ -635,6 +795,27 @@
   max-width: 360px;
   margin: 0 auto 15px;
   text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.ai-voice-controls {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  margin-top: 20px;
+  text-align: center;
+}
+.ai-voice-controls .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.ai-voice-controls svg {
+  width: 19px;
+  height: 19px;
+}
+.ai-voice-controls p {
+  margin: 0;
   color: var(--muted);
   font-size: 13px;
 }
@@ -810,6 +991,21 @@
     box-shadow: 0 0 0 20px var(--cream);
   }
 }
+@keyframes mic-pulse {
+  50% {
+    box-shadow: 0 0 0 6px rgb(75 126 87 / 18%);
+  }
+}
+@keyframes voice-signal {
+  to {
+    height: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .voice-console-signal i {
+    animation: none !important;
+  }
+}
 @media (max-width: 960px) {
   .hero {
     gap: 30px;
@@ -832,6 +1028,9 @@
   }
   .voice-cta {
     max-width: none;
+  }
+  .voice-console-hint {
+    display: none;
   }
 }
 @media (max-width: 640px) {
@@ -911,6 +1110,31 @@
   }
   .practice-top h1 {
     font-size: 28px;
+  }
+  .voice-console {
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 17px;
+    padding: 16px;
+  }
+  .voice-console-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+  }
+  .voice-console-icon > svg {
+    width: 26px;
+    height: 26px;
+  }
+  .voice-console-copy strong {
+    font-size: 22px;
+  }
+  .voice-console-copy p {
+    font-size: 13px;
+  }
+  .voice-console-actions,
+  .voice-console-toggle {
+    width: 100%;
   }
   .leave-link {
     font-size: 0;

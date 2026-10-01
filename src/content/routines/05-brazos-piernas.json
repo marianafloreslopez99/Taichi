@@ -1,7 +1,7 @@
 {
   "id": "brazos-piernas",
   "order": 5,
-  "name": "Brazos y piernas\n",
+  "name": "Brazos y piernas",
   "description": "Combina los movimientos de brazos con los cambios de peso y los pasos básicos.",
   "difficulty": "Intermedio",
   "estimatedMinutes": 10,
@@ -24,12 +24,39 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Comienza con los pies juntos. Abre un pie al ancho de los hombros y distribuye el peso. Eleva los brazos al inhalar y bájalos lentamente al exhalar.",
-              "pauseAfterMs": 0
+              "text": "Comienza con los pies juntos y adopta una postura cómoda.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora, abre un pie hasta quedar aproximadamente al ancho de los hombros.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Distribuye el peso entre las dos piernas y relaja los hombros.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Comienza a elevar los brazos lentamente mientras inhalas.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Cuando las manos lleguen aproximadamente a la altura de los hombros, comienza a bajarlas.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Baja los brazos lentamente mientras exhalas.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Muy bien. Mantén la espalda alineada y prepara el siguiente movimiento.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "opening",
-          "tips": ["Relaja los hombros.", "Mantén la espalda alineada."]
+          "tips": [
+            "Relaja los hombros.",
+            "Mantén la espalda alineada."
+          ]
         },
         {
           "id": "forma-crin",
@@ -40,8 +67,32 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Sostén una pelota imaginaria frente al cuerpo. Cambia el peso y abre un paso amplio hacia un lado. Al mismo tiempo, cambia la posición de las manos y extiende suavemente una de ellas.",
-              "pauseAfterMs": 0
+              "text": "Comienza sosteniendo una pelota imaginaria frente al cuerpo.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora, cambia lentamente el peso hacia un lado.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Mientras cambias el peso, abre un paso amplio hacia ese lado.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Coloca primero el talón y después apoya la planta del pie.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Al mismo tiempo, cambia la posición de las manos y extiende suavemente una de ellas.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Regresa lentamente y vuelve a formar la pelota frente al cuerpo.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Muy bien. Mantén las manos frente al cuerpo y coordina el paso con los brazos.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "horse",
@@ -59,8 +110,32 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Desde la posición anterior, cambia el peso hacia la otra pierna mientras una mano sube y la otra baja. Junta el pie y vuelve a formar la posición de las manos.",
-              "pauseAfterMs": 0
+              "text": "Comienza desde la posición anterior y prepara el cambio de peso.",
+              "pauseAfterMs": 2500
+            },
+            {
+              "text": "Ahora, cambia lentamente el peso hacia la otra pierna.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Mientras cambias el peso, deja que una mano suba y la otra baje.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Mantén los movimientos de las manos suaves y controlados.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora, junta el pie lentamente para recuperar la posición.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Vuelve a formar la posición de las manos frente al cuerpo.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Muy bien. Repite coordinando el paso, el cambio de peso y los brazos.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "crane",
@@ -78,12 +153,39 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Lleva una mano cerca de la oreja y la otra hacia la cadera. Coloca el pie al ancho de los hombros y cambia el peso hacia adelante mientras extiendes la mano para empujar suavemente.",
-              "pauseAfterMs": 0
+              "text": "Comienza llevando una mano cerca de la oreja y la otra hacia la cadera.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Ahora, coloca el pie al ancho de los hombros.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Cambia lentamente el peso hacia la pierna delantera.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Mientras avanzas, extiende la mano suavemente como si empujaras hacia adelante.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Mantén los dedos hacia adelante y evita forzar la rodilla.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Regresa lentamente y prepara el movimiento hacia el otro lado.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Muy bien. Coordina el paso, el cambio de peso y el movimiento de los brazos.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "brush",
-          "tips": ["No fuerces la rodilla.", "Mantén los dedos hacia adelante."]
+          "tips": [
+            "No fuerces la rodilla.",
+            "Mantén los dedos hacia adelante."
+          ]
         },
         {
           "id": "forma-laud",
@@ -94,8 +196,32 @@
           "durationSeconds": 120,
           "voiceGuide": [
             {
-              "text": "Lleva el peso hacia la pierna delantera mientras una mano se mueve como si fuera a tomar algo. Después cambia el peso hacia atrás, deja que el cuerpo gire y coloca ambas manos frente al cuerpo.",
-              "pauseAfterMs": 0
+              "text": "Comienza llevando el peso hacia la pierna delantera.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Mientras cambias el peso, mueve una mano como si fueras a tomar algo.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Ahora, cambia lentamente el peso hacia atrás.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Deja que el torso acompañe el cambio de peso y gire suavemente.",
+              "pauseAfterMs": 4000
+            },
+            {
+              "text": "Coloca ambas manos frente al cuerpo, como si sostuvieras un instrumento.",
+              "pauseAfterMs": 3500
+            },
+            {
+              "text": "Relaja los brazos y los hombros.",
+              "pauseAfterMs": 3000
+            },
+            {
+              "text": "Muy bien. Repite el movimiento lentamente, coordinando brazos, torso y piernas.",
+              "pauseAfterMs": 4000
             }
           ],
           "image": "lute",

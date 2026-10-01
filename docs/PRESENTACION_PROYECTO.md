@@ -11,7 +11,7 @@ El proyecto ya cuenta con:
 - sesiones persistentes en MySQL;
 - controles de reproducción, pausa, navegación y finalización;
 - guía hablada mediante la síntesis de voz del navegador;
-- preguntas escritas respondidas por Gemini 3.5 Flash;
+- preguntas por voz o texto respondidas por Gemini 3.5 Flash;
 - almacenamiento de cada pregunta y respuesta;
 - resumen final de la práctica;
 - validaciones, manejo de errores y pruebas automatizadas.
@@ -241,7 +241,7 @@ La página:
 />
 ```
 
-La narración usa `speechSynthesis` del navegador mediante [`src/infrastructure/ai/mockAdapters.ts`](../src/infrastructure/ai/mockAdapters.ts). La voz está configurada en español de México y a una velocidad reducida:
+La narración usa `speechSynthesis` del navegador mediante [`src/infrastructure/ai/BrowserTextToSpeechAdapter.ts`](../src/infrastructure/ai/BrowserTextToSpeechAdapter.ts). La voz está configurada en español de México y a una velocidad reducida:
 
 ```ts
 const utterance = new SpeechSynthesisUtterance(text)
@@ -250,7 +250,7 @@ utterance.rate = 0.88
 window.speechSynthesis.speak(utterance)
 ```
 
-Si la reproducción falla, la instrucción escrita permanece disponible. La entrada de preguntas actual es escrita; el proyecto conserva contratos para una futura integración de reconocimiento de voz, pero no graba el micrófono en esta fase.
+Si la reproducción falla, la instrucción escrita permanece disponible. Las preguntas habladas se transcriben mediante el reconocimiento del navegador; la entrada escrita permite continuar cuando el micrófono o el reconocimiento no están disponibles.
 
 ## 8. API REST
 

@@ -1,6 +1,6 @@
 # Taichi · Un momento para volver a ti
 
-Aplicación web de acompañamiento para practicar taichí con instrucciones visibles y narradas. Incluye siete rutinas ordenadas por grupo, con 32 movimientos persistidos en MySQL, sesiones anónimas y preguntas escritas contextuales respondidas por Gemini 3.5 Flash y narradas por el navegador.
+Aplicación web de acompañamiento para practicar taichí con instrucciones visibles y narradas. Incluye siete rutinas ordenadas por grupo, con 32 movimientos persistidos en MySQL, sesiones anónimas y preguntas por voz o texto respondidas por Gemini 3.5 Flash y narradas por el navegador.
 
 ## Inicio
 
@@ -25,9 +25,9 @@ Abra la URL indicada por Vite. Para verificar: `npm run typecheck`, `npm run lin
 
 ## Alcance
 
-Puede elegir entre siete rutinas, recorrer sus movimientos, pausar, repetir la guía, realizar una pregunta contextual a Gemini y consultar el resumen. Al reanudar, la narración comienza desde la primera frase del movimiento actual. La instrucción siempre está disponible como texto si el audio falla. Las sesiones anónimas sobreviven a una recarga mediante un identificador opaco guardado en `localStorage`.
+Puede elegir entre siete rutinas, recorrer sus movimientos, pausar, repetir la guía, realizar una pregunta contextual a Gemini y consultar el resumen. Durante la práctica, el micrófono escucha comandos aislados: «Pausar»/«Pausa», «Continuar»/«Reproducir», «Repetir», «Siguiente» y «Anterior». Para preguntar a Gemini sin tocar la pantalla, diga «Oye, …» o «Tengo una duda, …» seguido de la pregunta. También puede decir solo la activación y formular la duda en los diez segundos siguientes. Las demás conversaciones no se envían a Gemini. El indicador junto al título muestra si el micrófono está atento, reconectando o necesita permiso y permite apagarlo. La respuesta aparece en texto y se narra; al terminar, «Continuar» cierra el panel y reanuda la rutina. El botón «Preguntar a Gemini» y la entrada escrita siguen disponibles. Al reanudar, la narración comienza desde la primera frase del movimiento actual. La instrucción siempre está disponible como texto si el audio falla. Las sesiones anónimas sobreviven a una recarga mediante un identificador opaco guardado en `localStorage`.
 
-La clave de Gemini, el contexto confiable y la persistencia de respuestas permanecen en el backend; nunca se exponen al navegador. La entrada actual es escrita y no hay cuentas ni cámara. La aplicación es educativa y no da diagnósticos médicos. Ante dolor o lesión, detenga la práctica y consulte a un profesional.
+La clave de Gemini, el contexto confiable y la persistencia de respuestas permanecen en el backend; nunca se exponen al navegador. El reconocimiento de voz depende del navegador y puede requerir conexión a un servicio de reconocimiento del propio navegador. La escucha se reinicia tras cortes normales o de red mientras la página de práctica sigue abierta; el navegador puede limitarla si la pestaña está en segundo plano. No hay cuentas ni cámara. La aplicación es educativa y no da diagnósticos médicos. Ante dolor o lesión, detenga la práctica y consulte a un profesional.
 
 ## Stack y organización
 

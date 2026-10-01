@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react'
+import { act, render } from '@testing-library/react'
 import { screen, waitFor, within } from '@testing-library/dom'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -7,14 +7,66 @@ import { App } from './App'
 import { routines } from '../infrastructure/routines'
 import type { PracticeSession } from '../domain/models'
 
+class FakeContinuousRecognition {
+  static current: FakeContinuousRecognition
+  lang = ''
+  continuous = false
+  interimResults = false
+  onstart: (() => void) | null = null
+  onresult:
+    | ((event: {
+        resultIndex: number
+        results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>
+      }) => void)
+    | null = null
+  onerror: ((event: { error: string }) => void) | null = null
+  onend: (() => void) | null = null
+  private results: Array<{ isFinal: boolean; 0: { transcript: string } }> = []
+
+  constructor() {
+    FakeContinuousRecognition.current = this
+  }
+
+  start() {
+    this.onstart?.()
+  }
+
+  abort() {}
+
+  emit(transcript: string) {
+    this.results.push({ isFinal: true, 0: { transcript } })
+    this.onresult?.({
+      resultIndex: this.results.length - 1,
+      results: this.results,
+    })
+  }
+
+  emitInterim(transcript: string) {
+    this.results.push({ isFinal: false, 0: { transcript } })
+    this.onresult?.({
+      resultIndex: this.results.length - 1,
+      results: this.results,
+    })
+  }
+}
+
+function say(transcript: string) {
+  act(() => FakeContinuousRecognition.current.emit(transcript))
+}
+
+function sayInterim(transcript: string) {
+  act(() => FakeContinuousRecognition.current.emitInterim(transcript))
+}
+
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
 
 describe('practice journey', () => {
-  it('starts, repeats, pauses, resumes and navigates a movement', async () => {
+  it('controls the routine and asks Gemini hands-free', async () => {
     window.history.pushState({}, '', '/')
+    vi.stubGlobal('SpeechRecognition', FakeContinuousRecognition)
     let session: PracticeSession = {
       id: '00000000-0000-4000-8000-000000000001',
       routineId: 'primeros-movimientos',
@@ -71,7 +123,11 @@ describe('practice journey', () => {
         const action = path.split('/').pop()
         if (action === 'pause') session = { ...session, status: 'PAUSED' }
         if (action === 'resume') session = { ...session, status: 'PLAYING' }
-        if (action === 'next') session = { ...session, currentMovementIndex: 1 }
+        if (action === 'next')
+          session = {
+            ...session,
+            currentMovementIndex: session.currentMovementIndex + 1,
+          }
         if (action === 'previous')
           session = { ...session, currentMovementIndex: 0 }
         if (action === 'ask') session = { ...session, status: 'ASKING' }
@@ -83,7 +139,13 @@ describe('practice journey', () => {
     )
     vi.stubGlobal('scrollTo', vi.fn())
     const speak = vi.spyOn(voiceServices.tts, 'speak').mockResolvedValue()
-    vi.spyOn(voiceServices.tts, 'stop').mockImplementation(() => {})
+    const stopNarration = vi
+      .spyOn(voiceServices.tts, 'stop')
+      .mockImplementation(() => {})
+    const listen = vi
+      .spyOn(voiceServices.stt, 'listen')
+      .mockResolvedValue('¿Cómo coordino la respiración?')
+    vi.spyOn(voiceServices.stt, 'stop').mockImplementation(() => {})
     const user = userEvent.setup()
     render(<App />)
 
@@ -96,30 +158,63 @@ describe('practice journey', () => {
     expect(
       await screen.findByRole('heading', { name: 'Apertura' }),
     ).toBeInTheDocument()
-    await user.click(
-      screen.getByRole('button', { name: /preguntar a gemini/i }),
+    expect(
+      screen.getByRole('img', {
+        name: 'Coloca los pies separados y adopta una postura cómoda.',
+      }),
+    ).toHaveAttribute('src', '/img/routines/1.jpg')
+    expect(screen.getByText('Micrófono atento')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Apagar micrófono' }))
+    expect(screen.getByText('Micrófono apagado')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Activar micrófono' }))
+    expect(screen.getByText('Micrófono atento')).toBeInTheDocument()
+    say('La siguiente postura será después')
+    expect(
+      screen.getByRole('heading', { name: 'Apertura' }),
+    ).toBeInTheDocument()
+    say('Pausar')
+    await waitFor(() =>
+      expect(screen.getByText('En pausa')).toBeInTheDocument(),
     )
+    say('Continuar')
+    await waitFor(() =>
+      expect(screen.getByText('En movimiento')).toBeInTheDocument(),
+    )
+    const stopsBeforeWake = stopNarration.mock.calls.length
+    sayInterim('Oye, tengo una pregunta')
+    expect(stopNarration.mock.calls.length).toBeGreaterThan(stopsBeforeWake)
+    expect(screen.getByText('Dinos tu pregunta')).toBeInTheDocument()
+    expect(screen.getByText('En movimiento')).toBeInTheDocument()
+    expect(session.questions).toHaveLength(0)
+    say('Oye')
+    expect(screen.getByText('Dinos tu pregunta')).toBeInTheDocument()
+    say('¿Cómo coordino la respiración?')
     const dialog = await screen.findByRole('dialog')
-    const question = within(dialog).getByLabelText(/escribe tu duda/i)
-    await user.type(question, '¿Cómo coordino la respiración?')
-    await user.click(
-      within(dialog).getByRole('button', { name: /preguntar a gemini/i }),
-    )
+    expect(
+      within(dialog).getByText('La guía está en pausa mientras preguntas'),
+    ).toBeInTheDocument()
+    expect(listen).not.toHaveBeenCalled()
+    expect(
+      await within(dialog).findByText(/¿Cómo coordino la respiración\?/),
+    ).toBeInTheDocument()
     expect(
       await screen.findByText(
         'Abre los brazos al inhalar, sin forzar el ritmo.',
       ),
     ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /continuar rutina/i }))
+    await screen.findByRole('button', { name: /continuar rutina/i })
+    say('Continuar')
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent('En movimiento'),
+      expect(screen.getByText('En movimiento')).toBeInTheDocument(),
+    )
+    await waitFor(() =>
+      expect(screen.getByText('Micrófono atento')).toBeInTheDocument(),
     )
     const callsBeforeRepeat = speak.mock.calls.length
-    await user.click(screen.getByRole('button', { name: 'Repetir' }))
-    expect(speak.mock.calls.length).toBeGreaterThan(callsBeforeRepeat)
-    await user.click(screen.getByRole('button', { name: 'Pausar' }))
-    expect(screen.getByRole('status')).toHaveTextContent('En pausa')
-    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    say('Repetir')
+    await waitFor(() =>
+      expect(speak.mock.calls.length).toBeGreaterThan(callsBeforeRepeat),
+    )
     await waitFor(() =>
       expect(
         speak.mock.calls.filter(
@@ -128,13 +223,30 @@ describe('practice journey', () => {
         ).length,
       ).toBeGreaterThanOrEqual(3),
     )
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+    say('Siguiente')
     expect(
-      screen.getByRole('heading', { name: 'Acariciar la Crin del Caballo' }),
+      await screen.findByRole('heading', {
+        name: 'Acariciar la Crin del Caballo',
+      }),
     ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Anterior' }))
+    say('Anterior')
     expect(
       await screen.findByRole('heading', { name: 'Apertura' }),
     ).toBeInTheDocument()
+    say('Finalizar')
+    expect(
+      screen.getByText('Puedes finalizar cuando llegues al último movimiento.'),
+    ).toBeInTheDocument()
+    say('Siguiente')
+    await screen.findByRole('heading', {
+      name: 'Acariciar la Crin del Caballo',
+    })
+    say('Siguiente')
+    await screen.findByRole('heading', {
+      name: 'Grulla Blanca Extiende las Alas',
+    })
+    say('Finalizar')
+    await waitFor(() => expect(window.location.pathname).toBe('/resumen'))
+    expect(session.status).toBe('COMPLETED')
   })
 })

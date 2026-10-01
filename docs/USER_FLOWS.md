@@ -11,13 +11,17 @@ flowchart LR
   D --> B
 ```
 
-La selección crea una sesión persistida en MySQL y abre el primer movimiento. El usuario controla el avance manualmente; no hay avance automático. En la última tarjeta, la acción “Finalizar práctica” cierra la sesión y abre el resumen.
+La selección crea una sesión persistida en MySQL y abre el primer movimiento. El usuario controla el avance con botones o con las palabras aisladas «Pausar», «Continuar», «Repetir», «Siguiente» y «Anterior»; no hay avance automático. En la última tarjeta, “Siguiente” finaliza la práctica y abre el resumen.
 
 ```mermaid
 flowchart TD
-  M[Movimiento] --> Q[Preguntar a la IA]
+  M[Movimiento] --> Q[Oye o Tengo una duda + pregunta]
+  M --> B[Botón Preguntar a Gemini]
+  B --> Q
   Q --> P[Sesión ASKING e instrucción detenida]
-  P --> E[Escribir pregunta]
+  P --> V[Escuchar y transcribir pregunta]
+  P --> E[Escribir pregunta si hace falta]
+  V --> H[Gemini analiza el contexto]
   E --> H[Gemini analiza el contexto]
   H --> S[Respuesta escrita y TTS del navegador]
   S --> R[Respuesta escrita]
@@ -25,7 +29,7 @@ flowchart TD
   C --> K[Continuar mismo movimiento]
 ```
 
-El usuario escribe una pregunta real sobre el movimiento actual. Gemini recibe contexto validado por el servidor y la pregunta/respuesta se guarda en la sesión. La tarjeta permite repetir la narración. Cerrar conserva movimiento y tiempo; “Continuar rutina” reanuda. Si la respuesta falla, el texto permanece editable para reintentar. Si falla TTS, la respuesta escrita se mantiene y se comunica el fallo de audio.
+El usuario dice «Oye» o «Tengo una duda» seguido de su pregunta; el navegador la transcribe y la envía a Gemini automáticamente. Una activación aislada espera la pregunta durante diez segundos. Puede usar el botón, detener la escucha o escribir si el micrófono falla. Mientras Gemini procesa y narra, se pausan la guía y la escucha de comandos. Al terminar, «Continuar» por voz cierra el panel y reanuda la rutina. Gemini recibe contexto validado por el servidor y la pregunta/respuesta se guarda en la sesión. La tarjeta permite repetir la narración. Cerrar conserva movimiento y tiempo. Si la respuesta falla, el texto permanece editable para reintentar. Si falla TTS, la respuesta escrita se mantiene y se comunica el fallo de audio.
 
 ## Otros recorridos
 

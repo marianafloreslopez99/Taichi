@@ -4,6 +4,7 @@ export type SessionStatus = 'PLAYING' | 'PAUSED' | 'ASKING' | 'COMPLETED'
 export interface VoiceCue {
   text: string
   pauseAfterMs: number
+  image?: string
 }
 
 export interface Movement {

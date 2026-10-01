@@ -43,7 +43,7 @@
 - **BR-018** Un fallo de LLM no finaliza la sesión.
 - **BR-019** Un fallo de TTS conserva la respuesta escrita.
 - **BR-020** Un proveedor se sustituye sin editar las reglas del dominio.
-- **BR-027** La entrada escrita es el mecanismo principal y no requiere permiso de micrófono.
+- **BR-027** La pregunta por voz solicita permiso de micrófono; la entrada escrita sigue disponible si el reconocimiento falla.
 - **BR-028** Las preguntas de dolor o lesión muestran un aviso educativo y remiten a un profesional; no ofrecen diagnóstico.
 - **BR-035** La clave del proveedor LLM permanece exclusivamente en el backend.
 - **BR-036** Solo se responde sobre el movimiento actual de una sesión en estado `ASKING`.

@@ -11,15 +11,17 @@ interface Props {
   requiresProfessionalAdvice: boolean
   onClose: () => void
   onSubmit: (question: string) => void
+  onListen: () => void
+  onStopListening: () => void
   onReplay: () => void
   onContinue: () => void
 }
 
 const statusText: Record<AIInteractionStatus, string> = {
-  IDLE: '¿Qué quieres preguntar?',
+  IDLE: 'Haz tu pregunta por voz',
   LISTENING: 'Escuchando...',
   TRANSCRIBING: 'Transcribiendo...',
-  THINKING: 'Gemini está pensando...',
+  THINKING: 'IA está pensando...',
   SPEAKING: 'Aquí tienes una orientación',
   ERROR: 'No pudimos responder',
   COMPLETED: 'Aquí tienes una orientación',
@@ -34,17 +36,25 @@ export function AIQuestionPanel({
   requiresProfessionalAdvice,
   onClose,
   onSubmit,
+  onListen,
+  onStopListening,
   onReplay,
   onContinue,
 }: Props) {
   const [draft, setDraft] = useState(question)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const processing = status === 'THINKING' || status === 'SPEAKING'
-  const showForm = status === 'IDLE' || status === 'ERROR'
+  const processing =
+    status === 'LISTENING' || status === 'THINKING' || status === 'SPEAKING'
+  const showForm =
+    status === 'IDLE' || status === 'LISTENING' || status === 'ERROR'
 
   useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+    if (status === 'IDLE' || status === 'ERROR') inputRef.current?.focus()
+  }, [status])
+
+  useEffect(() => {
+    setDraft(question)
+  }, [question])
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -100,6 +110,9 @@ export function AIQuestionPanel({
             <Icon name="close" />
           </button>
         </div>
+        <div className="ai-guide-paused" role="status">
+          <Icon name="pause" /> La guía está en pausa mientras preguntas
+        </div>
         <div className={`ai-orb ${processing ? 'ai-orb--active' : ''}`}>
           <Icon name="spark" />
         </div>
@@ -107,11 +120,30 @@ export function AIQuestionPanel({
         <h2 id="ai-title" aria-live="polite">
           {statusText[status]}
         </h2>
+        {showForm && (
+          <div className="ai-voice-controls">
+            <button
+              className="button button--primary"
+              type="button"
+              onClick={status === 'LISTENING' ? onStopListening : onListen}
+            >
+              <Icon name="mic" />
+              {status === 'LISTENING'
+                ? 'Detener micrófono'
+                : 'Preguntar por voz'}
+            </button>
+            <p role="status">
+              {status === 'LISTENING'
+                ? 'Escuchando tu pregunta. Habla con claridad; se enviará al terminar.'
+                : 'Habla y enviaremos la transcripción a IA automáticamente.'}
+            </p>
+          </div>
+        )}
 
         {showForm && (
           <form className="ai-question-form" onSubmit={submit}>
             <label htmlFor="ai-question">
-              Escribe tu duda sobre la postura, respiración o coordinación
+              Escribe tu duda o corrige la transcripción
             </label>
             <textarea
               ref={inputRef}
@@ -120,7 +152,10 @@ export function AIQuestionPanel({
               maxLength={2000}
               rows={4}
               placeholder="Por ejemplo: ¿cómo debo respirar al elevar los brazos?"
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(event) => {
+                if (status === 'LISTENING') onStopListening()
+                setDraft(event.target.value)
+              }}
             />
             <div className="ai-question-form-footer">
               <span>{draft.length}/2000</span>
@@ -131,14 +166,14 @@ export function AIQuestionPanel({
               >
                 {status === 'ERROR'
                   ? 'Volver a intentar'
-                  : 'Preguntar a Gemini'}
+                  : 'Preguntar a IA'}
                 <Icon name="arrowRight" />
               </button>
             </div>
           </form>
         )}
 
-        {processing && (
+        {(status === 'THINKING' || status === 'SPEAKING') && (
           <p className="ai-help">
             La pregunta se responde usando la rutina y el movimiento actuales.
           </p>
@@ -157,7 +192,7 @@ export function AIQuestionPanel({
             </span>
           </div>
         )}
-        {question && status !== 'IDLE' && (
+        {question && !showForm && (
           <div className="qa-block">
             <span>Tu pregunta</span>
             <p>“{question}”</p>
@@ -191,12 +226,17 @@ export function AIQuestionPanel({
               <Icon name="sound" /> Escuchar de nuevo
             </button>
           )}
-          {status === 'COMPLETED' && (
+          {(status === 'COMPLETED' || status === 'ERROR') && (
             <button className="button button--primary" onClick={onContinue}>
               Continuar rutina <Icon name="arrowRight" />
             </button>
           )}
         </div>
+        {(status === 'COMPLETED' || status === 'ERROR') && (
+          <p className="ai-help">
+            También puedes decir «Continuar» para volver a la rutina.
+          </p>
+        )}
       </section>
     </div>
   )

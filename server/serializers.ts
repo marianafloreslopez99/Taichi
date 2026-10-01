@@ -47,6 +47,9 @@ export function serializeRoutine(routine: RoutineRecord): DomainRoutine {
                 {
                   text: String(cue.text),
                   pauseAfterMs: Number(cue.pauseAfterMs),
+                  ...('image' in cue && typeof cue.image === 'string'
+                    ? { image: cue.image }
+                    : {}),
                 },
               ]
             })

@@ -31,11 +31,12 @@ describe('routine content', () => {
   it('keeps the detailed opening narration and image reference', () => {
     const opening = routines[0]!.exercises[0]!.movements[0]!
     expect(opening.id).toBe('pp-apertura')
-    expect(opening.image).toBe('opening')
+    expect(opening.image).toBe('pp-apertura')
     expect(opening.voiceGuide).toHaveLength(5)
     expect(opening.voiceGuide[0]).toEqual({
       text: 'Coloca los pies separados y adopta una postura cómoda.',
       pauseAfterMs: 3000,
+      image: '1.jpg',
     })
   })
 })

@@ -39,6 +39,12 @@ export async function runTextQuestionFlow(
       'Escribe una pregunta antes de enviar.',
     )
   }
+  if (normalizedQuestion.length > 2000) {
+    throw new QuestionFlowError(
+      'INPUT',
+      'La pregunta es demasiado larga. Redúcela a 2000 caracteres.',
+    )
+  }
   const ensureActive = () => {
     if (signal?.aborted) throw new DOMException('Cancelado', 'AbortError')
   }
@@ -87,65 +93,57 @@ export async function runQuestionFlow(
   context: Omit<AIContext, 'question'>,
   services: VoiceServices,
   onStatus: (status: AIInteractionStatus) => void,
-  listen: () => Promise<Blob>,
   onQuestion?: (question: string) => void,
   onAnswer?: (response: AIResponse) => void,
   signal?: AbortSignal,
+  onInterim?: (text: string) => void,
 ): Promise<QuestionFlowResult> {
   const ensureActive = () => {
     if (signal?.aborted) throw new DOMException('Cancelado', 'AbortError')
   }
   onStatus('LISTENING')
-  let audio: Blob
   try {
+    let question: string
     try {
-      audio = await listen()
+      question = await services.stt.listen(signal, onInterim)
     } catch (error) {
       if (error instanceof DOMException && error.name === 'NotAllowedError') {
         throw new QuestionFlowError(
           'MICROPHONE',
-          'El micrófono no tiene permiso. Puedes volver a la rutina y seguir las instrucciones escritas.',
+          'El micrófono no tiene permiso. Puedes habilitarlo o escribir tu pregunta.',
         )
       }
       if (error instanceof DOMException && error.name === 'NotFoundError') {
         throw new QuestionFlowError(
           'MICROPHONE',
-          'No encontramos un micrófono disponible. Puedes continuar la rutina sin audio.',
+          'No encontramos un micrófono disponible. Puedes escribir tu pregunta.',
         )
       }
       throw new QuestionFlowError(
-        'MICROPHONE',
-        'No pudimos iniciar el micrófono. Inténtalo de nuevo o continúa la rutina.',
+        'STT',
+        error instanceof Error
+          ? error.message
+          : 'No pudimos iniciar el micrófono. Puedes escribir tu pregunta.',
       )
     }
     ensureActive()
     onStatus('TRANSCRIBING')
-    const question = (await services.stt.transcribe(audio)).trim()
-    ensureActive()
-    if (!question) throw new Error('La pregunta está vacía')
-    onQuestion?.(question)
-    onStatus('THINKING')
-    let response: AIResponse
-    try {
-      response = await services.ai.ask({ ...context, question }, signal)
-      ensureActive()
-    } catch {
+    question = question.trim()
+    if (!question) {
       throw new QuestionFlowError(
-        'LLM',
-        'No pudimos responder ahora. Inténtalo de nuevo.',
+        'STT',
+        'No se escuchó una pregunta. Inténtalo de nuevo.',
       )
     }
-    onAnswer?.(response)
-    onStatus('SPEAKING')
-    let audioError = false
-    try {
-      await services.tts.speak(response.text)
-      ensureActive()
-    } catch {
-      audioError = true
-    }
-    onStatus('COMPLETED')
-    return { question, response, audioError }
+    onQuestion?.(question)
+    return await runTextQuestionFlow(
+      context,
+      question,
+      services,
+      onStatus,
+      onAnswer,
+      signal,
+    )
   } catch (error) {
     if (signal?.aborted) throw new DOMException('Cancelado', 'AbortError')
     if (error instanceof QuestionFlowError) throw error
