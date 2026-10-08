@@ -25,31 +25,38 @@
           "voiceGuide": [
             {
               "text": "Coloca los pies paralelos y separados, adoptando una postura cómoda.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j3/1.jpg"
             },
             {
               "text": "Distribuye el peso entre ambas piernas y mantén las rodillas relajadas.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j3/2.jpg"
             },
             {
               "text": "Ahora, empuja suavemente con una pierna para llevar el peso hacia el otro lado.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j3/3.jpg"
             },
             {
               "text": "Deja que la pelvis acompañe el movimiento de manera natural.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j3/4.jpg"
             },
             {
               "text": "Regresa lentamente al centro y vuelve a distribuir el peso entre las dos piernas.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j3/2.jpg"
             },
             {
               "text": "Ahora lleva el peso hacia el lado contrario de la misma manera.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j3/5.jpg"
             },
             {
               "text": "Muy bien. Mantén las rodillas relajadas y evita girarlas hacia dentro.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j3/6.jpg"
             }
           ],
           "image": "pesohorse",
@@ -68,27 +75,33 @@
           "voiceGuide": [
             {
               "text": "Comienza llevando el peso lentamente hacia un lado.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j3/3.jpg"
             },
             {
               "text": "Cuando estés cómodo, relaja el cuerpo y permite que el peso vuelva al centro.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j3/2.jpg"
             },
             {
               "text": "Quédate un momento en el centro y busca una distribución cómoda del peso.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j3/7.jpg"
             },
             {
               "text": "Ahora lleva lentamente el peso hacia el lado contrario.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j3/5.jpg"
             },
             {
               "text": "Relaja el cuerpo y regresa nuevamente al centro.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j3/2.jpg"
             },
             {
               "text": "Muy bien. Repite el cambio de un lado al otro sin tener prisa.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j3/7.jpg"
             }
           ],
           "image": "balance",
@@ -107,31 +120,38 @@
           "voiceGuide": [
             {
               "text": "Coloca un pie adelante y el otro atrás, formando una posición de arco.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j3/11.jpg"
             },
             {
               "text": "Asegúrate de que el pie delantero apunte hacia adelante y adopta una postura cómoda.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j3/10.jpg"
             },
             {
               "text": "Ahora, cambia lentamente el peso hacia la pierna delantera.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j3/10.jpg"
             },
             {
               "text": "Deja que la pelvis acompañe el movimiento y mantén el cuerpo relajado.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j3/12.jpg"
             },
             {
               "text": "Regresa lentamente hacia el centro.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j3/13.jpg"
             },
             {
               "text": "Ahora lleva el peso hacia la pierna trasera.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j3/14.jpg"
             },
             {
               "text": "Muy bien. Repite el cambio de peso lentamente, acompañando el movimiento con la pelvis.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j3/15.jpg"
             }
           ],
           "image": "bow",

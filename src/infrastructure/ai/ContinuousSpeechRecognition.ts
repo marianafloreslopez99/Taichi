@@ -1,7 +1,11 @@
+import type { VoiceRecognitionTiming } from '../../application/voiceLatency'
+
 export type ContinuousMicStatus =
   | 'off'
+  | 'ready'
   | 'starting'
   | 'listening'
+  | 'processing'
   | 'reconnecting'
   | 'suspended'
   | 'blocked'
@@ -25,7 +29,9 @@ interface Recognition {
   onresult: ((event: RecognitionEvent) => void) | null
   onerror: ((event: { error: string }) => void) | null
   onend: (() => void) | null
+  onspeechend?: (() => void) | null
   start(): void
+  stop?(): void
   abort(): void
 }
 
@@ -39,15 +45,25 @@ export class ContinuousSpeechRecognition {
   private active: Recognition | null = null
   private retryTimer: number | null = null
   private networkFailures = 0
+  private singleUtterance = false
+  private utteranceTimer: number | null = null
+  private finishingUtterance = false
 
   constructor(
-    private readonly onPhrase: (text: string) => void,
+    private readonly onPhrase: (
+      text: string,
+      timing: VoiceRecognitionTiming,
+    ) => void,
     private readonly onStatus: (status: ContinuousMicStatus) => void,
-    private readonly onInterim?: (text: string) => void,
+    private readonly onInterim?: (
+      text: string,
+      timing: VoiceRecognitionTiming,
+    ) => void,
   ) {}
 
-  start(): void {
+  start(singleUtterance = false): void {
     this.desired = true
+    this.singleUtterance = singleUtterance
     if (!this.active && this.retryTimer === null) this.connect()
   }
 
@@ -57,6 +73,31 @@ export class ContinuousSpeechRecognition {
 
   stop(): void {
     this.halt('off')
+  }
+
+  wait(): void {
+    this.halt('ready')
+  }
+
+  finishUtterance(): void {
+    if (!this.singleUtterance || !this.active || this.finishingUtterance) return
+    if (!this.active.stop) {
+      this.wait()
+      return
+    }
+    try {
+      this.finishingUtterance = true
+      this.onStatus('processing')
+      this.active.stop()
+      if (this.active) this.limitUtterance(5000)
+    } catch {
+      this.wait()
+    }
+  }
+
+  private limitUtterance(delay: number): void {
+    if (this.utteranceTimer !== null) window.clearTimeout(this.utteranceTimer)
+    this.utteranceTimer = window.setTimeout(() => this.wait(), delay)
   }
 
   private halt(status: ContinuousMicStatus): void {
@@ -70,10 +111,15 @@ export class ContinuousSpeechRecognition {
   }
 
   private retire(recognition: Recognition, abort: boolean): void {
+    if (this.utteranceTimer !== null) {
+      window.clearTimeout(this.utteranceTimer)
+      this.utteranceTimer = null
+    }
     recognition.onstart = null
     recognition.onresult = null
     recognition.onerror = null
     recognition.onend = null
+    recognition.onspeechend = null
     if (this.active === recognition) this.active = null
     if (abort) {
       try {
@@ -86,6 +132,10 @@ export class ContinuousSpeechRecognition {
 
   private reconnect(delayMs: number): void {
     if (!this.desired) return
+    if (this.singleUtterance) {
+      this.wait()
+      return
+    }
     this.onStatus('reconnecting')
     this.retryTimer = window.setTimeout(() => {
       this.retryTimer = null
@@ -94,6 +144,7 @@ export class ContinuousSpeechRecognition {
   }
 
   private connect(): void {
+    this.finishingUtterance = false
     const browser = window as RecognitionWindow
     const Constructor =
       browser.SpeechRecognition ?? browser.webkitSpeechRecognition
@@ -107,9 +158,15 @@ export class ContinuousSpeechRecognition {
     this.active = recognition
     this.onStatus('starting')
     recognition.lang = 'es-MX'
-    recognition.continuous = true
+    recognition.continuous = !this.singleUtterance
     recognition.interimResults = true
     const handledFinal = new Set<number>()
+    const firstResults = new Map<number, number>()
+    let speechEndedAt: number | undefined
+    recognition.onspeechend = () => {
+      speechEndedAt = performance.now()
+    }
+    if (this.singleUtterance) this.limitUtterance(12_000)
 
     recognition.onstart = () => {
       if (this.active === recognition && this.desired)
@@ -125,13 +182,23 @@ export class ContinuousSpeechRecognition {
         const result = event.results[index]
         if (!result || handledFinal.has(index)) continue
         const phrase = result[0]?.transcript.trim()
+        const receivedAt = performance.now()
+        if (!firstResults.has(index)) firstResults.set(index, receivedAt)
+        const timing = {
+          firstResultAt: firstResults.get(index)!,
+          receivedAt,
+          speechEndedAt,
+        }
         if (!result.isFinal) {
-          if (phrase) this.onInterim?.(phrase)
+          if (phrase) this.onInterim?.(phrase, timing)
           continue
         }
         handledFinal.add(index)
         this.networkFailures = 0
-        if (phrase) this.onPhrase(phrase)
+        firstResults.delete(index)
+        if (phrase) this.onPhrase(phrase, timing)
+        speechEndedAt = undefined
+        if (this.singleUtterance && this.active === recognition) this.wait()
       }
     }
     recognition.onerror = (event) => {

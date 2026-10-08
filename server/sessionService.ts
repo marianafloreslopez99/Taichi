@@ -191,11 +191,10 @@ export async function transitionSession(
       throw transitionError('No hay una pregunta activa para cerrar.')
     data = { status: 'PAUSED', elapsedSeconds: session.elapsedSeconds }
   } else {
-    if (
-      !['PLAYING', 'PAUSED'].includes(session.status) ||
-      session.currentMovementIndex !== movementCount - 1
-    ) {
-      throw transitionError('Solo se puede finalizar en el último movimiento.')
+    if (!['PLAYING', 'PAUSED'].includes(session.status)) {
+      throw transitionError(
+        'Solo se puede finalizar una sesión en reproducción o pausada.',
+      )
     }
     data = {
       status: 'COMPLETED',

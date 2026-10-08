@@ -77,8 +77,27 @@ describe('sessionReducer', () => {
     ).toMatchObject({ status: 'PAUSED', currentMovementIndex: 0 })
   })
 
-  it('completes only on the last movement and never advances afterward', () => {
-    let session = start()
+  it.each(['PLAYING', 'PAUSED'] as const)(
+    'completes early from %s while preserving progress',
+    (status) => {
+      const session = { ...start(), status, elapsedSeconds: 42 }
+      expect(
+        sessionReducer(session, {
+          type: 'COMPLETE',
+          movementCount: movements.length,
+          at: 200,
+        }),
+      ).toMatchObject({
+        status: 'COMPLETED',
+        completedAt: 200,
+        currentMovementIndex: 0,
+        elapsedSeconds: 42,
+      })
+    },
+  )
+
+  it('does not complete while a question is active', () => {
+    const session = sessionReducer(start(), { type: 'ASK' })!
     expect(
       sessionReducer(session, {
         type: 'COMPLETE',
@@ -86,6 +105,10 @@ describe('sessionReducer', () => {
         at: 200,
       }),
     ).toBe(session)
+  })
+
+  it('completes on the last movement and never advances afterward', () => {
+    let session = start()
     for (let i = 1; i < movements.length; i += 1)
       session = sessionReducer(session, {
         type: 'NEXT',

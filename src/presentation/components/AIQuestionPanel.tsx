@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { AIInteractionStatus } from '../../application/questionFlow'
 import { Icon } from './Icon'
+import { VoiceTalkButton, type VoiceTalkControl } from './VoiceTalkButton'
 
 interface Props {
   status: AIInteractionStatus
@@ -15,6 +16,7 @@ interface Props {
   onStopListening: () => void
   onReplay: () => void
   onContinue: () => void
+  talkControl?: VoiceTalkControl
 }
 
 const statusText: Record<AIInteractionStatus, string> = {
@@ -40,6 +42,7 @@ export function AIQuestionPanel({
   onStopListening,
   onReplay,
   onContinue,
+  talkControl,
 }: Props) {
   const [draft, setDraft] = useState(question)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -100,7 +103,7 @@ export function AIQuestionPanel({
       >
         <div className="ai-panel-top">
           <span className="eyebrow">
-            <Icon name="spark" /> ASISTENTE DE PRÁCTICA · GEMINI
+            <Icon name="spark" /> ASISTENTE DE PRÁCTICA · IA
           </span>
           <button
             className="icon-button"
@@ -164,9 +167,7 @@ export function AIQuestionPanel({
                 type="submit"
                 disabled={!draft.trim()}
               >
-                {status === 'ERROR'
-                  ? 'Volver a intentar'
-                  : 'Preguntar a IA'}
+                {status === 'ERROR' ? 'Volver a intentar' : 'Preguntar a IA'}
                 <Icon name="arrowRight" />
               </button>
             </div>
@@ -234,8 +235,12 @@ export function AIQuestionPanel({
         </div>
         {(status === 'COMPLETED' || status === 'ERROR') && (
           <p className="ai-help">
-            También puedes decir «Continuar» para volver a la rutina.
+            {talkControl ? 'Pulsa para hablar y di' : 'También puedes decir'}{' '}
+            «Continuar» para volver a la rutina.
           </p>
+        )}
+        {(status === 'COMPLETED' || status === 'ERROR') && talkControl && (
+          <VoiceTalkButton {...talkControl} />
         )}
       </section>
     </div>

@@ -21,6 +21,7 @@
   --muted: #475569;
   --line: #cbd5e1;
   --error: #ef4444;
+  --command-highlight: rgb(127, 188, 235);
 
   /* Tipografías y Espacios (Tus originales intactos) */
   --font-display: 'DM Serif Display', Georgia, serif;

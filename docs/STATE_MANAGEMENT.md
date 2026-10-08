@@ -10,12 +10,12 @@ stateDiagram-v2
   PLAYING --> ASKING: ASK
   PAUSED --> ASKING: ASK
   ASKING --> PAUSED: CLOSE_QUESTION
-  PLAYING --> COMPLETED: COMPLETE en último movimiento
-  PAUSED --> COMPLETED: COMPLETE en último movimiento
+  PLAYING --> COMPLETED: COMPLETE tras confirmación
+  PAUSED --> COMPLETED: COMPLETE tras confirmación
   COMPLETED --> [*]: CLEAR
 ```
 
-`NEXT` y `PREVIOUS` solo se aceptan en reproducción o pausa y verifican límites. `COMPLETE` solo se acepta en último movimiento. `TICK` no opera en pausa, pregunta ni completado. Las preguntas se vinculan en el servidor al movimiento actual. Acciones inválidas devuelven el estado sin cambio; esto evita combinaciones de booleanos incompatibles. La pregunta hablada sigue `IDLE → LISTENING → TRANSCRIBING → THINKING → SPEAKING → COMPLETED`; la escrita empieza en `THINKING`. Los errores permiten reintentar por voz o texto. Cerrar cancela la escucha, solicitud o reproducción y vuelve a `PAUSED`.
+`NEXT` y `PREVIOUS` solo se aceptan en reproducción o pausa y verifican límites. `COMPLETE` se acepta desde cualquier movimiento en reproducción o pausa; la interfaz lo envía únicamente después de confirmar. La confirmación detiene la narración, admite «Sí, finalizar» o «Cancelar» y bloquea los otros comandos mientras espera. `TICK` no opera en pausa, pregunta ni completado. Las preguntas se vinculan en el servidor al movimiento actual. Acciones inválidas devuelven el estado sin cambio; esto evita combinaciones de booleanos incompatibles. La pregunta hablada sigue `IDLE → LISTENING → TRANSCRIBING → THINKING → SPEAKING → COMPLETED`; la escrita empieza en `THINKING`. Los errores permiten reintentar por voz o texto. Cerrar cancela la escucha, solicitud o reproducción y vuelve a `PAUSED`.
 
 El identificador opaco de la sesión se guarda en `localStorage`; recargar recupera la sesión desde la API. La Fase 6 deberá añadir cuentas, historial visible, versión de esquema y política de sincronización para varios dispositivos.
 

@@ -22,6 +22,8 @@ export function SessionSummaryPage() {
     )
   if (!session || !routine || session.status !== 'COMPLETED')
     return <Navigate to="/rutinas" replace />
+  const movementCount = flattenRoutineMovements(routine).length
+  const finishedEarly = session.currentMovementIndex < movementCount - 1
   const restart = () => {
     void start(routine).then((newSession) =>
       navigate(`/practica/${newSession.routineId}`),
@@ -41,13 +43,17 @@ export function SessionSummaryPage() {
         <em>Quédate con esa calma.</em>
       </h1>
       <p>
-        Completaste <strong>{routine.name}</strong>. Cada movimiento fue una
-        forma de volver a ti.
+        Finalizaste tu práctica de <strong>{routine.name}</strong>. Cada
+        movimiento fue una forma de volver a ti.
       </p>
       <div className="summary-stats">
         <div>
-          <strong>{routine.exercises.length}</strong>
-          <span>ejercicios</span>
+          <strong>
+            {finishedEarly
+              ? `${session.currentMovementIndex + 1}/${movementCount}`
+              : routine.exercises.length}
+          </strong>
+          <span>{finishedEarly ? 'paso alcanzado' : 'ejercicios'}</span>
         </div>
         <div>
           <strong>
@@ -74,7 +80,8 @@ export function SessionSummaryPage() {
       </div>
       <p className="summary-end">Gracias por darte este espacio.</p>
       <span className="sr-only">
-        {flattenRoutineMovements(routine).length} movimientos completados
+        Práctica finalizada en el paso {session.currentMovementIndex + 1} de{' '}
+        {movementCount}.
       </span>
     </div>
   )

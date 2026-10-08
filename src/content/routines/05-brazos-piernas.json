@@ -25,31 +25,38 @@
           "voiceGuide": [
             {
               "text": "Comienza con los pies juntos y adopta una postura cómoda.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j5/1.jpg"
             },
             {
               "text": "Ahora, abre un pie hasta quedar aproximadamente al ancho de los hombros.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/2.jpg"
             },
             {
               "text": "Distribuye el peso entre las dos piernas y relaja los hombros.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j5/3.jpg"
             },
             {
               "text": "Comienza a elevar los brazos lentamente mientras inhalas.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j5/4.jpg"
             },
             {
               "text": "Cuando las manos lleguen aproximadamente a la altura de los hombros, comienza a bajarlas.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/5.jpg"
             },
             {
               "text": "Baja los brazos lentamente mientras exhalas.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j5/6.jpg"
             },
             {
               "text": "Muy bien. Mantén la espalda alineada y prepara el siguiente movimiento.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j5/7.jpg"
             }
           ],
           "image": "opening",
@@ -68,31 +75,38 @@
           "voiceGuide": [
             {
               "text": "Comienza sosteniendo una pelota imaginaria frente al cuerpo.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j5/8.jpg"
             },
             {
               "text": "Ahora, cambia lentamente el peso hacia un lado.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j5/9.jpg"
             },
             {
               "text": "Mientras cambias el peso, abre un paso amplio hacia ese lado.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j5/10.jpg"
             },
             {
               "text": "Coloca primero el talón y después apoya la planta del pie.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/11.jpg"
             },
             {
               "text": "Al mismo tiempo, cambia la posición de las manos y extiende suavemente una de ellas.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j5/12.jpg"
             },
             {
               "text": "Regresa lentamente y vuelve a formar la pelota frente al cuerpo.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/13.jpg"
             },
             {
               "text": "Muy bien. Mantén las manos frente al cuerpo y coordina el paso con los brazos.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j5/14.jpg"
             }
           ],
           "image": "horse",
@@ -111,31 +125,38 @@
           "voiceGuide": [
             {
               "text": "Comienza desde la posición anterior y prepara el cambio de peso.",
-              "pauseAfterMs": 2500
+              "pauseAfterMs": 2500,
+              "image": "j5/15.jpg"
             },
             {
               "text": "Ahora, cambia lentamente el peso hacia la otra pierna.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j5/16.jpg"
             },
             {
               "text": "Mientras cambias el peso, deja que una mano suba y la otra baje.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/17.jpg"
             },
             {
               "text": "Mantén los movimientos de las manos suaves y controlados.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j5/18.jpg"
             },
             {
               "text": "Ahora, junta el pie lentamente para recuperar la posición.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/19.jpg"
             },
             {
               "text": "Vuelve a formar la posición de las manos frente al cuerpo.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/20.jpg"
             },
             {
               "text": "Muy bien. Repite coordinando el paso, el cambio de peso y los brazos.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j5/21.jpg"
             }
           ],
           "image": "crane",
@@ -154,31 +175,38 @@
           "voiceGuide": [
             {
               "text": "Comienza llevando una mano cerca de la oreja y la otra hacia la cadera.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j5/22.jpg"
             },
             {
               "text": "Ahora, coloca el pie al ancho de los hombros.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/23.jpg"
             },
             {
               "text": "Cambia lentamente el peso hacia la pierna delantera.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/24.jpg"
             },
             {
               "text": "Mientras avanzas, extiende la mano suavemente como si empujaras hacia adelante.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j5/25.jpg"
             },
             {
               "text": "Mantén los dedos hacia adelante y evita forzar la rodilla.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/26.jpg"
             },
             {
               "text": "Regresa lentamente y prepara el movimiento hacia el otro lado.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/20.jpg"
             },
             {
               "text": "Muy bien. Coordina el paso, el cambio de peso y el movimiento de los brazos.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j5/27.jpg"
             }
           ],
           "image": "brush",
@@ -197,31 +225,38 @@
           "voiceGuide": [
             {
               "text": "Comienza llevando el peso hacia la pierna delantera.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j5/28.jpg"
             },
             {
               "text": "Mientras cambias el peso, mueve una mano como si fueras a tomar algo.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/29.jpg"
             },
             {
               "text": "Ahora, cambia lentamente el peso hacia atrás.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/30.jpg"
             },
             {
               "text": "Deja que el torso acompañe el cambio de peso y gire suavemente.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j5/31.jpg"
             },
             {
               "text": "Coloca ambas manos frente al cuerpo, como si sostuvieras un instrumento.",
-              "pauseAfterMs": 3500
+              "pauseAfterMs": 3500,
+              "image": "j5/32.jpg"
             },
             {
               "text": "Relaja los brazos y los hombros.",
-              "pauseAfterMs": 3000
+              "pauseAfterMs": 3000,
+              "image": "j5/33.jpg"
             },
             {
               "text": "Muy bien. Repite el movimiento lentamente, coordinando brazos, torso y piernas.",
-              "pauseAfterMs": 4000
+              "pauseAfterMs": 4000,
+              "image": "j5/33.jpg"
             }
           ],
           "image": "lute",

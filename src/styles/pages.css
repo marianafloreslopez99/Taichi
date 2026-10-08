@@ -1,3 +1,79 @@
+.catalog-page {
+  padding-top: 18px;
+}
+.catalog-welcome {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: linear-gradient(110deg, #eef4ff, #fff7fa);
+}
+.catalog-welcome-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  color: var(--sage);
+  background: var(--cream);
+}
+.catalog-welcome-copy {
+  min-width: 0;
+}
+.catalog-welcome-copy p {
+  margin: 0;
+  min-height: 2.9em;
+  color: var(--forest-soft);
+  font-size: 16px;
+  line-height: 1.45;
+}
+.catalog-welcome-error {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.catalog-title {
+  margin: 0 0 16px;
+  font-size: 28px;
+}
+.catalog-page .routine-card {
+  display: flex;
+  flex-direction: column;
+}
+.catalog-page .routine-card-art {
+  height: clamp(96px, 16vh, 144px);
+  flex: none;
+}
+.catalog-page .routine-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 16px 20px;
+}
+.catalog-page .routine-card h3 {
+  margin: 8px 0;
+  font-size: 26px;
+}
+.catalog-page .routine-card p {
+  min-height: 0;
+  margin-bottom: 12px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.catalog-page .routine-meta {
+  margin-top: auto;
+  margin-bottom: 14px;
+}
+.catalog-page .routine-meta span {
+  padding: 5px 10px;
+}
+.catalog-page .routine-card-action {
+  min-height: 48px;
+  font-size: 17px;
+}
 .hero {
   display: grid;
   grid-template-columns: 1.04fr 0.96fr;
@@ -337,8 +413,37 @@
   font: 36px/1.1 var(--font-display);
   margin: 6px 0 0;
 }
-.voice-console {
+.voice-help {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-bottom: 24px;
+}
+.voice-help > p {
+  margin: 0;
+  color: var(--muted);
+}
+.voice-help {
+  margin-top: 12px;
+}
+.voice-help p {
+  font: 15px/1.65 var(--font-body);
+  color: var(--muted);
+}
+.voice-help details {
+  flex-basis: 100%;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.voice-help summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--forest);
+}
+.voice-console {
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr) minmax(300px, 360px);
   align-items: center;
   gap: 20px;
   min-height: 112px;
@@ -425,7 +530,9 @@
 }
 .voice-console-copy {
   min-width: 0;
-  flex: 1;
+}
+.voice-console-copy:last-child {
+  grid-column: 2 / -1;
 }
 .voice-console-eyebrow {
   display: block;
@@ -447,11 +554,53 @@
   line-height: 1.4;
 }
 .voice-console-actions {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.voice-console-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.voice-console-buttons .voice-talk-button {
+  grid-column: 1 / -1;
+}
+.voice-mode {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 7px;
-  flex: none;
+  gap: 12px;
+  color: var(--forest-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+.voice-mode select {
+  min-height: 43px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--sage-deep);
+  border-radius: 10px;
+  background: var(--cream);
+  color: var(--forest);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.voice-mode select:hover,
+.voice-mode select:focus-visible {
+  background: var(--command-highlight);
+}
+.voice-command-feedback {
+  min-height: 1.5em;
+  color: var(--forest);
+  font-size: 14px;
+}
+.voice-console-buttons .voice-console-toggle {
+  min-width: 0;
+  width: 100%;
 }
 .voice-console-toggle {
   min-width: 164px;
@@ -463,13 +612,22 @@
   color: var(--forest);
   font: 700 14px var(--font-body);
   cursor: pointer;
+  transition: background 0.15s;
 }
-.voice-console-toggle:hover,
-.voice-console-toggle:focus-visible {
-  background: var(--forest);
-  color: #fff;
+.voice-console-toggle:hover:not(:disabled),
+.voice-console-toggle:focus-visible:not(:disabled),
+.voice-console-toggle:active:not(:disabled),
+.voice-console-toggle--active:not(:disabled),
+.voice-console-toggle[aria-pressed='true']:not(:disabled) {
+  background: var(--command-highlight);
+  color: var(--forest);
+}
+.voice-console-toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 .voice-console-hint {
+  text-align: center;
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
@@ -634,9 +792,6 @@
   font-weight: 700;
   transition: background 0.2s;
 }
-.control-button:hover:not(:disabled) {
-  background: rgb(127, 188, 235);
-}
 .control-button svg {
   width: 30px;
   height: 30px;
@@ -645,8 +800,12 @@
   color: var(--paper);
   background: rgb(255, 182, 55);
 }
-.control-button--main:hover:not(:disabled) {
-  background: rgb(127, 188, 235);
+.control-button:hover:not(:disabled),
+.control-button:focus-visible:not(:disabled),
+.control-button:active:not(:disabled),
+.control-button--active:not(:disabled) {
+  background: var(--command-highlight);
+  color: var(--forest);
 }
 .voice-cta {
   display: grid;
@@ -701,6 +860,13 @@
   grid-column: 3;
   grid-row: 1 / 3;
   width: 17px;
+}
+.finish-confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
 }
 .dialog-backdrop {
   position: fixed;
@@ -1007,6 +1173,12 @@
   }
 }
 @media (max-width: 960px) {
+  .voice-console {
+    grid-template-columns: 66px minmax(0, 1fr);
+  }
+  .voice-console-actions {
+    grid-column: 1 / -1;
+  }
   .hero {
     gap: 30px;
     min-height: 580px;
@@ -1034,6 +1206,18 @@
   }
 }
 @media (max-width: 640px) {
+  .catalog-welcome {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+  .catalog-welcome > button {
+    grid-column: 2 / -1;
+    min-width: 0;
+    width: fit-content;
+    min-height: 38px;
+    font-size: 13px;
+  }
   .hero {
     grid-template-columns: 1fr;
     gap: 35px;
@@ -1112,7 +1296,7 @@
     font-size: 28px;
   }
   .voice-console {
-    flex-wrap: wrap;
+    grid-template-columns: 54px minmax(0, 1fr);
     gap: 14px;
     margin-top: 17px;
     padding: 16px;
@@ -1133,6 +1317,7 @@
     font-size: 13px;
   }
   .voice-console-actions,
+  .voice-console-buttons,
   .voice-console-toggle {
     width: 100%;
   }

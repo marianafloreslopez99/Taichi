@@ -13,7 +13,7 @@
 - **BR-004** Una sesión en reproducción se puede pausar.
 - **BR-005** Una sesión pausada no incrementa el tiempo activo ni avanza por sí sola.
 - **BR-006** Una sesión completada no acepta navegación ni reanudación.
-- **BR-010** Completar el último movimiento finaliza la sesión y fija `completedAt`.
+- **BR-010** Finalizar desde cualquier movimiento requiere confirmación en la interfaz y fija `completedAt`.
 - **BR-022** El tiempo mostrado suma solo segundos en estado `PLAYING`.
 - **BR-023** Una sesión abandonada se elimina de memoria tras confirmar la acción.
 
@@ -23,7 +23,7 @@
 - **BR-032** Pausar cancela la guía; reanudar comienza desde la primera frase del mismo movimiento.
 - **BR-033** Cambiar de movimiento, preguntar o salir cancela voz y pausas pendientes.
 - **BR-008** Se puede regresar mientras la sesión está activa o pausada.
-- **BR-009** No se puede navegar más allá del último movimiento; el botón final se convierte en “Finalizar práctica”.
+- **BR-009** No se puede navegar más allá del último movimiento; el botón final se convierte en “Finalizar práctica” y solicita confirmación.
 - **BR-024** El primer movimiento no tiene anterior.
 - **BR-025** Navegar a una rutina inexistente muestra una salida hacia el catálogo.
 

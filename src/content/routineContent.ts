@@ -19,7 +19,7 @@ const voiceCueSchema = z.strictObject({
   pauseAfterMs: z.number().int().min(0).max(30_000),
   image: z
     .string()
-    .regex(/^[a-zA-Z0-9_-]+\.(?:jpg|jpeg|png|webp)$/)
+    .regex(/^(?:j[1-7]\/)?[a-zA-Z0-9_-]+\.(?:jpg|jpeg|png|webp)$/)
     .optional(),
 })
 

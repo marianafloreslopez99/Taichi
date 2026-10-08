@@ -69,8 +69,7 @@ export function sessionReducer(
         ? { ...session, questions: [...session.questions, action.question] }
         : session
     case 'COMPLETE':
-      return canNavigate(session) &&
-        session.currentMovementIndex === action.movementCount - 1
+      return canNavigate(session)
         ? { ...session, status: 'COMPLETED', completedAt: action.at }
         : session
     case 'TICK':
