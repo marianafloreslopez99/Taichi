@@ -20,6 +20,11 @@ import { queryClient } from './queryClient'
 import { getVoiceLatencySamples } from '../application/voiceLatency'
 import { flattenRoutineMovements } from '../domain/routines'
 
+const openingInstruction =
+  'En Apertura, coloca los pies separados y adopta una postura cómoda.'
+const horseInstruction =
+  'En Acariciar la Crin del Caballo, imagina que sostienes una pelota grande frente al cuerpo.'
+
 class FakeContinuousRecognition {
   static current: FakeContinuousRecognition
   static instances: FakeContinuousRecognition[] = []
@@ -90,8 +95,11 @@ async function startVoicePractice(
     status?: 'PLAYING' | 'PAUSED'
     movementIndex?: number
     guidance?: 'new'
+    routineIndex?: number
   } = {},
 ) {
+  const routineIndex = initial.routineIndex ?? 0
+  const routine = routines[routineIndex]!
   if (initial.guidance !== 'new')
     window.localStorage.setItem(
       guidanceStorageKey,
@@ -101,7 +109,7 @@ async function startVoicePractice(
   vi.stubGlobal('SpeechRecognition', FakeContinuousRecognition)
   let session: PracticeSession = {
     id: '00000000-0000-4000-8000-000000000009',
-    routineId: routines[0]!.id,
+    routineId: routine.id,
     currentMovementIndex: initial.movementIndex ?? 0,
     status: initial.status ?? 'PLAYING',
     startedAt: Date.now(),
@@ -117,7 +125,7 @@ async function startVoicePractice(
       if (path.endsWith('/routines'))
         return new Response(JSON.stringify({ data: routines }))
       if (path.endsWith(`/routines/${session.routineId}`))
-        return new Response(JSON.stringify({ data: routines[0] }))
+        return new Response(JSON.stringify({ data: routine }))
       const action = path.split('/').pop()!
       if (
         ['pause', 'resume', 'next', 'previous', 'complete'].includes(action)
@@ -148,13 +156,126 @@ async function startVoicePractice(
   const user = userEvent.setup()
   render(<App />)
   await user.click(
-    (await screen.findAllByRole('button', { name: /Elegir esta rutina/i }))[0]!,
+    (await screen.findAllByRole('button', { name: /Elegir esta rutina/i }))[
+      routineIndex
+    ]!,
   )
   await screen.findByText('Micrófono atento')
   return { user, speak, stop, transitions, getSession: () => session }
 }
 
 describe('practice journey', () => {
+  it.each(routines.map((routine, routineIndex) => ({ routine, routineIndex })))(
+    'automatically narrates every step of $routine.name and asks before finishing',
+    async ({ routine, routineIndex }) => {
+      const { speak, transitions, getSession } = await startVoicePractice(
+        undefined,
+        { routineIndex },
+      )
+      const steps = flattenRoutineMovements(routine)
+      vi.useFakeTimers()
+      await act(async () => say('Repetir'))
+      for (const [index, { movement }] of steps.entries()) {
+        expect(getSession().currentMovementIndex).toBe(index)
+        expect(
+          screen.getByRole('heading', { name: movement.name }),
+        ).toBeInTheDocument()
+        await act(async () =>
+          vi.advanceTimersByTimeAsync(movement.voiceGuide.length * 1500 - 1),
+        )
+        expect(getSession().currentMovementIndex).toBe(index)
+        expect(speak).toHaveBeenLastCalledWith(movement.voiceGuide.at(-1)!.text)
+        await act(async () => vi.advanceTimersByTimeAsync(1))
+      }
+      expect(transitions).toEqual(Array(steps.length - 1).fill('next'))
+      expect(
+        screen.getByRole('dialog', { name: /finalizar/i }),
+      ).toBeInTheDocument()
+      expect(getSession().status).toBe('PLAYING')
+      await act(async () => vi.advanceTimersByTimeAsync(60000))
+      expect(transitions).not.toContain('complete')
+      await act(async () => say('Cancelar'))
+      await act(async () => vi.advanceTimersByTimeAsync(60000))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(
+        speak.mock.calls.filter(([text]) => text === finishConfirmationPrompt),
+      ).toHaveLength(1)
+    },
+  )
+
+  it('suspends automatic progression while paused or consulting help, then advances once after continuing', async () => {
+    const { getSession, transitions } = await startVoicePractice()
+    const guide = flattenRoutineMovements(routines[0]!)[0]!.movement.voiceGuide
+    vi.useFakeTimers()
+    await act(async () => say('Repetir'))
+    await act(async () => vi.advanceTimersByTimeAsync(1500))
+    await act(async () => say('Pausar'))
+    await act(async () => vi.advanceTimersByTimeAsync(60000))
+    expect(getSession().currentMovementIndex).toBe(0)
+    expect(getSession().status).toBe('PAUSED')
+    await act(async () => say('Continuar'))
+    await act(async () => say('Ayuda'))
+    await act(async () => vi.advanceTimersByTimeAsync(60000))
+    expect(getSession().currentMovementIndex).toBe(0)
+    await act(async () => say('Continuar'))
+    await act(async () =>
+      vi.advanceTimersByTimeAsync((guide.length - 1) * 1500),
+    )
+    expect(getSession().currentMovementIndex).toBe(1)
+    expect(transitions.filter((action) => action === 'next')).toHaveLength(1)
+  })
+
+  it('does not advance before the final spoken instruction ends or duplicate a manual advance', async () => {
+    const { speak, transitions, getSession } = await startVoicePractice()
+    const guide = flattenRoutineMovements(routines[0]!)[0]!.movement.voiceGuide
+    let finishSpeaking: () => void = () => {}
+    speak.mockImplementation((text) =>
+      text === guide.at(-1)!.text
+        ? new Promise<void>((resolve) => {
+            finishSpeaking = resolve
+          })
+        : Promise.resolve(),
+    )
+    vi.useFakeTimers()
+    await act(async () => say('Repetir'))
+    await act(async () => vi.advanceTimersByTimeAsync(60000))
+    expect(getSession().currentMovementIndex).toBe(0)
+    expect(transitions).not.toContain('next')
+    await act(async () => finishSpeaking())
+    await act(async () => vi.advanceTimersByTimeAsync(1499))
+    await act(async () => say('Siguiente'))
+    await act(async () => vi.advanceTimersByTimeAsync(1))
+    expect(getSession().currentMovementIndex).toBe(1)
+    expect(transitions).toEqual(['next'])
+  })
+
+  it('stops automatic retries after a failed transition and allows an explicit retry', async () => {
+    let failNext = true
+    const { transitions, getSession } = await startVoicePractice(
+      async (action) =>
+        action === 'next' && failNext
+          ? new Response(
+              JSON.stringify({
+                error: { code: 'TEMPORARY_ERROR', message: 'Reintenta' },
+              }),
+              { status: 500 },
+            )
+          : undefined,
+    )
+    vi.useFakeTimers()
+    await act(async () => say('Repetir'))
+    await act(async () => vi.advanceTimersByTimeAsync(60000))
+    expect(transitions).toEqual(['next'])
+    expect(getSession().currentMovementIndex).toBe(0)
+    expect(screen.getByRole('alert')).toHaveTextContent('No se pudo ejecutar')
+    failNext = false
+    await act(async () =>
+      fireEvent.click(screen.getByRole('button', { name: 'Siguiente' })),
+    )
+    expect(getSession().currentMovementIndex).toBe(1)
+    expect(transitions).toEqual(['next', 'next'])
+  })
+
   it('introduces essential controls and both modes once, then teaches navigation, questions and finishing in context', async () => {
     const { speak } = await startVoicePractice(undefined, { guidance: 'new' })
     expect(speak).toHaveBeenCalledWith(practiceGuidance.essentials.text)
@@ -185,6 +306,9 @@ describe('practice journey', () => {
     })
     await screen.findByText('Micrófono atento')
     expect(speak).toHaveBeenCalledWith(practiceGuidance.finish.text)
+    expect(speak).toHaveBeenLastCalledWith(
+      'En Grulla Blanca Extiende las Alas, comienza sosteniendo una pelota grande frente al cuerpo.',
+    )
     for (const id of [
       'essentials',
       'navigation',
@@ -567,12 +691,94 @@ describe('practice journey', () => {
       if (command === 'Pausar') {
         expect(speak).toHaveBeenCalledTimes(beforeCommand + 1)
       } else {
-        const cue = flattenRoutineMovements(routines[0]!)[expectedIndex]!
-          .movement.voiceGuide[0]!.text
+        const cue = expectedIndex === 0 ? openingInstruction : horseInstruction
         await waitFor(() => expect(speak).toHaveBeenLastCalledWith(cue))
       }
     },
   )
+
+  it.each(['voz', 'botón'])(
+    'resumes the interrupted instruction using %s and resets only when repeating or navigating',
+    async (control) => {
+      const { speak, stop, getSession } = await startVoicePractice()
+      expect(speak).toHaveBeenLastCalledWith(openingInstruction)
+      const guide = flattenRoutineMovements(routines[0]!)[0]!.movement
+        .voiceGuide
+      const instruction = guide[1]!.text
+      let finishInstruction: (() => void) | undefined
+      speak.mockImplementation((text) => {
+        if (text === instruction) {
+          return new Promise<void>((resolve) => {
+            finishInstruction = resolve
+          })
+        }
+        return Promise.resolve()
+      })
+      stop.mockImplementation(() => {
+        finishInstruction?.()
+        finishInstruction = undefined
+      })
+      vi.useFakeTimers()
+      await act(async () => say('Repetir'))
+      await act(async () => vi.advanceTimersByTimeAsync(guide[0]!.pauseAfterMs))
+      expect(speak).toHaveBeenLastCalledWith(instruction)
+      await act(async () => {
+        if (control === 'voz') {
+          sayInterim('Pausar')
+          say('Pausar')
+        } else fireEvent.click(screen.getByRole('button', { name: 'Pausar' }))
+      })
+      expect(getSession().status).toBe('PAUSED')
+      expect(speak).toHaveBeenLastCalledWith('Tomemos un break.')
+      const beforeResume = speak.mock.calls.length
+      await act(async () => {
+        if (control === 'voz') say('Continuar')
+        else fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+      })
+      expect(getSession().status).toBe('PLAYING')
+      expect(
+        speak.mock.calls.slice(beforeResume).map(([text]) => text),
+      ).toEqual(['Continuemos con la práctica.', instruction])
+      expect(screen.getByText(instruction)).toBeInTheDocument()
+      await act(async () => say('Repetir'))
+      expect(speak).toHaveBeenLastCalledWith(openingInstruction)
+      await act(async () => say('Siguiente'))
+      expect(speak).toHaveBeenLastCalledWith(horseInstruction)
+      await act(async () => say('Pausar'))
+      await act(async () => say('Anterior'))
+      await act(async () => say('Continuar'))
+      expect(speak).toHaveBeenLastCalledWith(openingInstruction)
+    },
+  )
+
+  it('repeats the current instruction after a pause between instructions, once the resume confirmation ends', async () => {
+    const { speak } = await startVoicePractice()
+    const guide = flattenRoutineMovements(routines[0]!)[0]!.movement.voiceGuide
+    vi.useFakeTimers()
+    await act(async () => say('Repetir'))
+    await act(async () => vi.advanceTimersByTimeAsync(1200))
+    await act(async () => say('Pausar'))
+    await act(async () => vi.advanceTimersByTimeAsync(10000))
+    let finishConfirmation: () => void = () => {}
+    speak.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishConfirmation = resolve
+        }),
+    )
+    await act(async () => say('Continuar'))
+    await act(async () => vi.advanceTimersByTimeAsync(10000))
+    expect(speak).toHaveBeenLastCalledWith('Continuemos con la práctica.')
+    await act(async () => finishConfirmation())
+    expect(speak).toHaveBeenLastCalledWith(openingInstruction)
+    await act(async () => vi.advanceTimersByTimeAsync(1499))
+    expect(speak).toHaveBeenLastCalledWith(openingInstruction)
+    await act(async () => vi.advanceTimersByTimeAsync(1))
+    expect(speak).toHaveBeenLastCalledWith(guide[1]!.text)
+    expect(
+      speak.mock.calls.filter(([text]) => text === openingInstruction),
+    ).toHaveLength(3)
+  })
 
   it('retains the written confirmation and resumes listening when confirmation audio fails', async () => {
     const { speak } = await startVoicePractice()
@@ -933,9 +1139,7 @@ describe('practice journey', () => {
       within(helpDialog).getByRole('button', { name: 'Cerrar ayuda' }),
     )
     await screen.findByText('Micrófono atento')
-    expect(speak).toHaveBeenLastCalledWith(
-      'Coloca los pies separados y adopta una postura cómoda.',
-    )
+    expect(speak).toHaveBeenLastCalledWith(openingInstruction)
     expect(session.questions).toHaveLength(0)
     await user.click(screen.getByRole('button', { name: 'Apagar micrófono' }))
     expect(screen.getByText('Micrófono apagado')).toBeInTheDocument()
@@ -1007,10 +1211,7 @@ describe('practice journey', () => {
     )
     await waitFor(() =>
       expect(
-        speak.mock.calls.filter(
-          ([text]) =>
-            text === 'Coloca los pies separados y adopta una postura cómoda.',
-        ).length,
+        speak.mock.calls.filter(([text]) => text === openingInstruction).length,
       ).toBeGreaterThanOrEqual(3),
     )
     say('Siguiente')

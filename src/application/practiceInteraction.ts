@@ -25,7 +25,7 @@ export const practiceGuidance = {
   },
   navigation: {
     title: 'Muévete a tu ritmo',
-    text: 'Puedes decir Siguiente para avanzar, Anterior para regresar o Repetir para escuchar de nuevo las instrucciones.',
+    text: 'La práctica avanza al terminar las instrucciones de cada paso. Puedes decir Siguiente para adelantar, Anterior para regresar o Repetir para escuchar de nuevo las instrucciones.',
   },
   questions: {
     title: 'También puedes preguntar',
@@ -78,7 +78,7 @@ export const voiceHelpTopics = [
     title: 'Movimientos y controles',
     sections: [
       'Di Pausar para detener la guía y Continuar para retomarla.',
-      'Di Siguiente para avanzar, Anterior para volver al paso previo o Repetir para escuchar las instrucciones otra vez.',
+      'La práctica avanza al terminar las instrucciones de cada paso. Di Siguiente para adelantar, Anterior para volver al paso previo o Repetir para escuchar las instrucciones otra vez.',
     ],
   },
   {

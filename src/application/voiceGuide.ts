@@ -1,5 +1,20 @@
-import type { VoiceCue } from '../domain/models'
+import type { Movement, VoiceCue } from '../domain/models'
 import type { TextToSpeechService } from './ports'
+
+export interface VoiceGuidePosition {
+  cueIndex: number
+}
+
+export function movementVoiceGuide(movement: Movement): VoiceCue[] {
+  return movement.voiceGuide.map((cue, index) => ({
+    ...cue,
+    text:
+      index === 0
+        ? `En ${movement.name}, ${cue.text.charAt(0).toLocaleLowerCase('es-MX')}${cue.text.slice(1)}`
+        : cue.text,
+    pauseAfterMs: Math.min(cue.pauseAfterMs, 1500),
+  }))
+}
 
 function waitForPause(milliseconds: number, signal: AbortSignal) {
   if (milliseconds === 0 || signal.aborted) return Promise.resolve()
@@ -20,12 +35,17 @@ export async function playVoiceGuide(
   tts: TextToSpeechService,
   signal: AbortSignal,
   onCue?: (cue: VoiceCue, index: number) => void,
+  savedPosition?: VoiceGuidePosition,
 ) {
-  for (const [index, cue] of guide.entries()) {
+  const position = savedPosition ?? { cueIndex: 0 }
+  while (position.cueIndex < guide.length) {
     if (signal.aborted) return
-    onCue?.(cue, index)
+    const cue = guide[position.cueIndex]!
+    onCue?.(cue, position.cueIndex)
     await tts.speak(cue.text)
     if (signal.aborted) return
     await waitForPause(cue.pauseAfterMs, signal)
+    if (signal.aborted) return
+    position.cueIndex += 1
   }
 }

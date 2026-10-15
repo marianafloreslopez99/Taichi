@@ -3,7 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { useSession } from '../../app/SessionProvider'
 import { voiceServices } from '../../app/services'
-import { playVoiceGuide } from '../../application/voiceGuide'
+import {
+  playVoiceGuide,
+  movementVoiceGuide,
+  type VoiceGuidePosition,
+} from '../../application/voiceGuide'
 import {
   recordVoiceLatency,
   type VoiceRecognitionTiming,
@@ -86,16 +90,19 @@ function PracticeExperience({
   } | null>(null)
   const commandHighlightTimerRef = useRef<number | null>(null)
   const feedbackTimerRef = useRef<number | null>(null)
-  const quickPauseRef = useRef<{ cueIndex: number; timer: number } | null>(null)
+  const quickPauseRef = useRef<{ timer: number } | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const narrationRef = useRef<AbortController | null>(null)
   const commandPendingRef = useRef(false)
   const commandControllerRef = useRef<AbortController | null>(null)
   const repeatAfterCommandRef = useRef(false)
-  const narrationStartRef = useRef(0)
+  const narrationPositionRef = useRef<
+    | (VoiceGuidePosition & { movementId: string; advanceRequested?: boolean })
+    | null
+  >(null)
+  const narrationCompleteRef = useRef<() => void>(() => {})
   const finishingRef = useRef(false)
   const finishRequestedRef = useRef(false)
-  const finishCueRef = useRef(0)
   const introducedRef = useRef(false)
   const askingRef = useRef(false)
   const closingRef = useRef<Promise<void> | null>(null)
@@ -151,65 +158,66 @@ function PracticeExperience({
     clearTip()
   }, [clearTip])
 
-  const startNarration = useCallback(
-    (fromIndex = 0) => {
-      if (!movement || finishingRef.current || finishRequestedRef.current)
-        return
-      if (quickPauseRef.current) highlightCommand(null)
-      stopNarration()
-      const controller = new AbortController()
-      narrationRef.current = controller
-      setSpeechError(false)
-      void (async () => {
-        if (!introducedRef.current) {
-          const introduction = routineIntroduction(routine.name)
-          setAnnouncement(introduction)
-          await voiceServices.tts.speak(introduction)
-          if (controller.signal.aborted) return
-          introducedRef.current = true
-          setAnnouncement(null)
-        }
-        await playTip('essentials', controller.signal)
-        if (session.currentMovementIndex > 0)
-          await playTip('navigation', controller.signal)
-        if (session.currentMovementIndex === steps.length - 1)
-          await playTip('finish', controller.signal)
+  const startNarration = useCallback(() => {
+    if (!movement || finishingRef.current || finishRequestedRef.current) return
+    if (quickPauseRef.current) highlightCommand(null)
+    stopNarration()
+    if (narrationPositionRef.current?.movementId !== movement.id)
+      narrationPositionRef.current = {
+        movementId: movement.id,
+        cueIndex: 0,
+      }
+    const position = narrationPositionRef.current
+    const controller = new AbortController()
+    narrationRef.current = controller
+    setSpeechError(false)
+    void (async () => {
+      if (!introducedRef.current) {
+        const introduction = routineIntroduction(routine.name)
+        setAnnouncement(introduction)
+        await voiceServices.tts.speak(introduction)
         if (controller.signal.aborted) return
-        await playVoiceGuide(
-          movement.voiceGuide.slice(fromIndex),
-          voiceServices.tts,
-          controller.signal,
-          (_cue, index) =>
-            setActiveCue({ movementId: movement.id, index: fromIndex + index }),
-        )
-        if (session.currentMovementIndex < steps.length - 1)
-          await playTip('questions', controller.signal)
-      })().catch(() => {
-        if (!controller.signal.aborted) {
-          introducedRef.current = true
-          setAnnouncement(null)
-          setSpeechError(true)
-        }
-      })
-    },
-    [
-      movement,
-      routine.name,
-      stopNarration,
-      highlightCommand,
-      playTip,
-      session.currentMovementIndex,
-      steps.length,
-    ],
-  )
+        introducedRef.current = true
+        setAnnouncement(null)
+      }
+      await playTip('essentials', controller.signal)
+      if (session.currentMovementIndex > 0)
+        await playTip('navigation', controller.signal)
+      if (session.currentMovementIndex === steps.length - 1)
+        await playTip('finish', controller.signal)
+      if (controller.signal.aborted) return
+      await playVoiceGuide(
+        movementVoiceGuide(movement),
+        voiceServices.tts,
+        controller.signal,
+        (_cue, index) => setActiveCue({ movementId: movement.id, index }),
+        position,
+      )
+      if (session.currentMovementIndex < steps.length - 1)
+        await playTip('questions', controller.signal)
+      if (!controller.signal.aborted) narrationCompleteRef.current()
+    })().catch(() => {
+      if (!controller.signal.aborted) {
+        introducedRef.current = true
+        setAnnouncement(null)
+        setSpeechError(true)
+      }
+    })
+  }, [
+    movement,
+    routine.name,
+    stopNarration,
+    highlightCommand,
+    playTip,
+    session.currentMovementIndex,
+    steps.length,
+  ])
 
   useEffect(() => {
     if (commandPending || helpView) return
     if (session.status !== 'PLAYING' && !repeatAfterCommandRef.current) return
     repeatAfterCommandRef.current = false
-    const fromIndex = narrationStartRef.current
-    narrationStartRef.current = 0
-    startNarration(fromIndex)
+    startNarration()
     return stopNarration
   }, [session.status, startNarration, stopNarration, commandPending, helpView])
 
@@ -268,6 +276,19 @@ function PracticeExperience({
     })()
     return () => controller.abort()
   }, [commandConfirmation, showVoiceFeedback, playTip])
+
+  useEffect(() => {
+    if (!finishRequested) return
+    const controller = new AbortController()
+    narrationRef.current = controller
+    void voiceServices.tts
+      .speak(finishConfirmationPrompt)
+      .catch(() => {})
+      .finally(() => {
+        if (!controller.signal.aborted) setFinishPromptSpeaking(false)
+      })
+    return () => controller.abort()
+  }, [finishRequested])
 
   useEffect(
     () => () => {
@@ -332,7 +353,6 @@ function PracticeExperience({
     command: ConfirmedPracticeCommand,
     action: () => Promise<void>,
     detectedAt = performance.now(),
-    fromIndex = 0,
   ) => {
     if (commandPendingRef.current) return
     const controller = new AbortController()
@@ -346,6 +366,14 @@ function PracticeExperience({
     try {
       await action()
       if (controller.signal.aborted) return
+      if (
+        command === 'repeat' ||
+        command === 'next' ||
+        command === 'previous'
+      ) {
+        narrationPositionRef.current = null
+        setActiveCue(null)
+      }
       recordVoiceLatency(command, 'action', detectedAt)
       highlightCommand(command)
       showVoiceFeedback(commandConfirmations[command])
@@ -358,7 +386,6 @@ function PracticeExperience({
       setVoiceNotice(
         'No se pudo ejecutar el comando de voz. Inténtalo de nuevo.',
       )
-      narrationStartRef.current = fromIndex
       commandControllerRef.current = null
       commandPendingRef.current = false
       setCommandPending(false)
@@ -401,20 +428,15 @@ function PracticeExperience({
       explainCommands()
       return
     }
-    const fromIndex =
-      quickPauseRef.current?.cueIndex ??
-      (activeCue?.movementId === movement?.id ? (activeCue?.index ?? 0) : 0)
     let action: (() => Promise<void>) | undefined
     if (command === 'help') {
       action = async () => {
-        if (!helpView) narrationStartRef.current = fromIndex
         helpControllerRef.current?.abort()
         setHelpSpeaking(false)
         setHelpView('welcome')
       }
     } else if (command === 'push-to-talk' || command === 'continuous') {
       action = async () => {
-        if (!helpView) narrationStartRef.current = fromIndex
         helpControllerRef.current?.abort()
         setHelpSpeaking(false)
         if (!mic.enabled) mic.toggle()
@@ -451,7 +473,7 @@ function PracticeExperience({
     }
     if (action) {
       showVoiceFeedback(`Detecté «${names[command]}». Aplicando…`)
-      void executeConfirmedCommand(command, action, detectedAt, fromIndex)
+      void executeConfirmedCommand(command, action, detectedAt)
     }
   }
 
@@ -494,8 +516,7 @@ function PracticeExperience({
             ].includes(intent.command) ||
               (intent.command === 'previous' &&
                 session.currentMovementIndex > 0)))
-        if (session.status === 'PLAYING' && !takesOver)
-          startNarration(quickPause.cueIndex)
+        if (session.status === 'PLAYING' && !takesOver) startNarration()
       }
     }
     if (finishRequestedRef.current) {
@@ -583,15 +604,12 @@ function PracticeExperience({
       !interimWakeRef.current
     ) {
       if (quickPauseRef.current) return
-      const cueIndex =
-        activeCue?.movementId === movement?.id ? (activeCue?.index ?? 0) : 0
       const detectedAt = timing?.receivedAt ?? performance.now()
       stopNarration()
       highlightCommand('pause', 0)
       recordVoiceLatency('pause', 'audio-stop', detectedAt)
       showVoiceFeedback('Detecté «Pausar». Confirmando…')
       quickPauseRef.current = {
-        cueIndex,
         timer: window.setTimeout(() => {
           quickPauseRef.current = null
           highlightCommand(null)
@@ -599,14 +617,13 @@ function PracticeExperience({
             'No se confirmó la pausa. Puedes pulsar Pausar.',
             4000,
           )
-          startNarration(cueIndex)
+          startNarration()
         }, 4000),
       }
       return
     }
     if (quickPauseRef.current) {
-      const cueIndex = quickPauseRef.current.cueIndex
-      startNarration(cueIndex)
+      startNarration()
       showVoiceFeedback('La pausa no se confirmó. Retomando la guía.', 3000)
     }
     if (intent?.type !== 'wake') return
@@ -647,24 +664,12 @@ function PracticeExperience({
     )
       return
     finishRequestedRef.current = true
-    finishCueRef.current =
-      activeCue && activeCue.movementId === movement?.id ? activeCue.index : 0
     clearWake()
     stopNarration()
     mic.suspendNow()
     setFinishError('')
     setFinishRequested(true)
     setFinishPromptSpeaking(true)
-    const controller = new AbortController()
-    narrationRef.current = controller
-    void voiceServices.tts
-      .speak(finishConfirmationPrompt)
-      .then(() => {
-        if (!controller.signal.aborted) setFinishPromptSpeaking(false)
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setFinishPromptSpeaking(false)
-      })
   }
 
   const cancelFinish = () => {
@@ -674,7 +679,7 @@ function PracticeExperience({
     setFinishRequested(false)
     setFinishPromptSpeaking(false)
     setFinishError('')
-    if (session.status === 'PLAYING') startNarration(finishCueRef.current)
+    if (session.status === 'PLAYING') startNarration()
   }
 
   const confirmFinish = () => {
@@ -701,6 +706,24 @@ function PracticeExperience({
       .finally(() => setFinishPending(false))
   }
 
+  narrationCompleteRef.current = () => {
+    if (
+      session.status !== 'PLAYING' ||
+      commandPendingRef.current ||
+      panelOpen ||
+      openingQuestion ||
+      helpView ||
+      finishRequestedRef.current ||
+      finishingRef.current
+    )
+      return
+    const position = narrationPositionRef.current
+    if (!position || position.advanceRequested) return
+    position.advanceRequested = true
+    if (session.currentMovementIndex === steps.length - 1) requestFinish()
+    else void executeConfirmedCommand('next', actions.next)
+  }
+
   const explainCommands = (topic: VoiceHelpTopic | 'all' | null = null) => {
     if (
       panelOpen ||
@@ -712,9 +735,6 @@ function PracticeExperience({
     )
       return
     highlightCommand('commands')
-    const fromIndex =
-      activeCue && activeCue.movementId === movement?.id ? activeCue.index : 0
-    if (!helpView) narrationStartRef.current = fromIndex
     clearWake()
     stopNarration()
     mic.suspendNow()
@@ -907,8 +927,7 @@ function PracticeExperience({
                 mic.talk()
                 return
               }
-              if (quickPauseRef.current)
-                startNarration(quickPauseRef.current.cueIndex)
+              if (quickPauseRef.current) startNarration()
               if (waitingForQuestion && session.status === 'PLAYING')
                 startNarration()
               clearWake()

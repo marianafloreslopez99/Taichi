@@ -13,7 +13,7 @@ flowchart LR
   D --> B
 ```
 
-La selección crea una sesión persistida en MySQL y abre el primer movimiento. El usuario controla el avance con botones o con las palabras aisladas «Pausar», «Continuar», «Repetir», «Siguiente» y «Anterior»; no hay avance automático. «Finalizar» abre una confirmación desde cualquier tarjeta. «Sí, finalizar» o el botón de confirmación abre el resumen; «Cancelar» retoma la frase actual, conservando la pausa si la sesión estaba pausada. El botón “Finalizar” del último movimiento también pide confirmación. Cuando se finaliza antes del último movimiento, el resumen muestra el paso alcanzado.
+La selección crea una sesión persistida en MySQL y abre el primer movimiento. La voz comienza cada movimiento con su nombre seguido de la primera instrucción: «En Acariciar la Crin del Caballo, imagina que sostienes una pelota grande frente al cuerpo». Las esperas entre instrucciones se limitan a 1.5 segundos. Al terminar las instrucciones y los consejos pendientes, la práctica avanza automáticamente al siguiente movimiento mientras siga en reproducción. Pausar, preguntar o consultar ayuda interrumpe ese avance. El usuario también puede controlar la práctica con botones o con «Pausar», «Continuar», «Repetir», «Siguiente» y «Anterior». Al terminar el último movimiento se solicita confirmación para finalizar; cancelar conserva el paso y no vuelve a abrir la confirmación automáticamente. «Finalizar» también abre la confirmación desde cualquier tarjeta. «Sí, finalizar» o el botón de confirmación abre el resumen. Cuando se finaliza antes del último movimiento, el resumen muestra el paso alcanzado. Si falla el avance automático, se muestra un aviso y se puede reintentar con «Siguiente».
 
 ```mermaid
 flowchart TD
@@ -45,7 +45,7 @@ Una transcripción provisional exacta de «Pausar» detiene el audio y muestra �
 
 Las mediciones locales de reconocimiento, interrupción del audio y aplicación de comandos están documentadas en [Control por voz](VOICE_CONTROL.md).
 
-- **Pausa y continuar:** `PLAYING → PAUSED → PLAYING`; la guía se cancela al pausar y reinicia desde la primera frase del movimiento al continuar.
+- **Pausa y continuar:** `PLAYING → PAUSED → PLAYING`; al continuar se vuelve a narrar completa la instrucción donde se pausó y después siguen las siguientes. «Repetir» reinicia todas las instrucciones del movimiento.
 - **Repetir:** vuelve a solicitar lectura de la instrucción actual sin tocar índice, progreso o tiempo.
 - **Regresar:** retrocede un movimiento si existe; el tiempo total no se reinicia.
 - **Abandonar:** acción explícita desde práctica, con confirmación del navegador; se limpia sesión y se vuelve al catálogo.
