@@ -13,7 +13,12 @@ import {
 } from '../application/practiceInteraction'
 import { finishConfirmationPrompt } from '../presentation/components/FinishConfirmation'
 import { queryClient } from './queryClient'
-import { getVoiceLatencySamples } from '../application/voiceLatency'
+import {
+  clearVoiceEvaluation,
+  getVoiceEvaluation,
+  getVoiceLatencySamples,
+  startVoiceEvaluation,
+} from '../application/voiceLatency'
 
 class FakeContinuousRecognition {
   static current: FakeContinuousRecognition
@@ -59,10 +64,26 @@ class FakeContinuousRecognition {
       results: this.results,
     })
   }
+
+  repeatLastResult() {
+    this.onresult?.({
+      resultIndex: this.results.length - 1,
+      results: this.results,
+    })
+  }
+
+  finalizeInterim(transcript: string) {
+    this.results[this.results.length - 1] = { isFinal: true, 0: { transcript } }
+    this.repeatLastResult()
+  }
 }
 
 function say(transcript: string) {
   act(() => FakeContinuousRecognition.current.emit(transcript))
+}
+
+async function sayAndSettle(transcript: string) {
+  await act(async () => FakeContinuousRecognition.current.emit(transcript))
 }
 
 function sayInterim(transcript: string) {
@@ -70,6 +91,7 @@ function sayInterim(transcript: string) {
 }
 
 afterEach(() => {
+  clearVoiceEvaluation()
   cleanup()
   queryClient.clear()
   window.localStorage.clear()
@@ -105,13 +127,25 @@ async function startVoicePractice(
         return new Response(JSON.stringify({ data: routines[0] }))
       const action = path.split('/').pop()!
       if (
-        ['pause', 'resume', 'next', 'previous', 'complete'].includes(action)
+        [
+          'pause',
+          'resume',
+          'next',
+          'previous',
+          'complete',
+          'ask',
+          'close-question',
+          'questions',
+        ].includes(action)
       ) {
         transitions.push(action)
         const response = await transition?.(action)
         if (response) return response
         if (action === 'pause') session = { ...session, status: 'PAUSED' }
         if (action === 'resume') session = { ...session, status: 'PLAYING' }
+        if (action === 'ask') session = { ...session, status: 'ASKING' }
+        if (action === 'close-question')
+          session = { ...session, status: 'PAUSED' }
         if (action === 'next')
           session = {
             ...session,
@@ -140,6 +174,360 @@ async function startVoicePractice(
 }
 
 describe('practice journey', () => {
+  it('restores routine commands after a question quota error without repeating the Gemini request', async () => {
+    const quotaMessage =
+      'Se agotó la cuota diaria de Gemini para este proyecto. Inténtalo después del reinicio de la cuota.'
+    const { transitions } = await startVoicePractice(async (action) =>
+      action === 'questions'
+        ? new Response(
+            JSON.stringify({
+              error: {
+                code: 'AI_DAILY_QUOTA_EXHAUSTED',
+                message: quotaMessage,
+              },
+            }),
+            { status: 429 },
+          )
+        : undefined,
+    )
+    const oldRecognition = FakeContinuousRecognition.current
+    await sayAndSettle('Oye, cómo coordino la respiración')
+    await screen.findByText(quotaMessage)
+    await waitFor(() =>
+      expect(FakeContinuousRecognition.current).not.toBe(oldRecognition),
+    )
+    await sayAndSettle('Continuar')
+    await screen.findByText('Micrófono atento')
+    await sayAndSettle('Pausar')
+    await screen.findByText('En pausa')
+    expect(transitions).toEqual([
+      'ask',
+      'questions',
+      'close-question',
+      'resume',
+      'pause',
+    ])
+  })
+  it('records one audio stop for a provisional pause and its final result', async () => {
+    await startVoicePractice()
+    startVoiceEvaluation({
+      browser: 'edge',
+      device: 'desktop',
+      deviceProfile: 'primary',
+      noise: 'quiet',
+      audioOutput: 'speakers',
+      startup: 'warm',
+    })
+    sayInterim('Pausar')
+    await act(async () =>
+      FakeContinuousRecognition.current.finalizeInterim('Pausar'),
+    )
+    await screen.findByText('En pausa')
+    const cuts = () =>
+      getVoiceEvaluation()!.entries.flatMap((entry) =>
+        entry.kind === 'latency' && entry.sample.phase === 'audio-stop'
+          ? [entry.sample]
+          : [],
+      )
+    expect(cuts()).toEqual([
+      expect.objectContaining({ command: 'pause', audioStopBasis: 'interim' }),
+    ])
+    await sayAndSettle('Continuar')
+    await sayAndSettle('Pausar')
+    expect(cuts()).toHaveLength(2)
+    expect(cuts()[1]).toMatchObject({
+      command: 'pause',
+      audioStopBasis: 'final',
+    })
+  })
+
+  it('records an unmatched rapid phrase without storing its text and still accepts a later command', async () => {
+    const { transitions } = await startVoicePractice()
+    startVoiceEvaluation({
+      browser: 'edge',
+      device: 'desktop',
+      deviceProfile: 'primary',
+      noise: 'quiet',
+      audioOutput: 'speakers',
+      startup: 'warm',
+    })
+    say('Pausar continuar repetir')
+    expect(transitions).toHaveLength(0)
+    expect(getVoiceEvaluation()!.entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'capture',
+          event: expect.objectContaining({
+            name: 'phrase-ignored',
+            reason: 'unmatched',
+          }),
+        }),
+      ]),
+    )
+    expect(JSON.stringify(getVoiceEvaluation())).not.toContain(
+      'Pausar continuar repetir',
+    )
+    await sayAndSettle('Pausar')
+    expect(transitions).toEqual(['pause'])
+  })
+  it('serializes voice and button commands using the updated session, with immediate pause audio', async () => {
+    let releaseNext: () => void = () => {}
+    let releasePause: () => void = () => {}
+    let nextCount = 0
+    const { user, speak, stop, transitions, getSession } =
+      await startVoicePractice(async (action) => {
+        if (action === 'next' && nextCount++ === 0)
+          await new Promise<void>((resolve) => {
+            releaseNext = resolve
+          })
+        if (action === 'pause')
+          await new Promise<void>((resolve) => {
+            releasePause = resolve
+          })
+        return undefined
+      })
+    const ask = vi.spyOn(voiceServices.ai, 'ask')
+    say('Siguiente')
+    say('Siguiente')
+    // A button shares the same queue as voice commands.
+    await user.click(screen.getByRole('button', { name: 'Repetir' }))
+    say('Anterior')
+    const stopsBeforePause = stop.mock.calls.length
+    sayInterim('Pausar')
+    expect(stop.mock.calls.length).toBe(stopsBeforePause + 1)
+    say('Pausar')
+    say('Continuar')
+    const narrationAfterPause = speak.mock.calls.length
+    expect(transitions).toEqual(['next'])
+    await act(async () => releaseNext())
+    await waitFor(() =>
+      expect(transitions).toEqual(['next', 'next', 'previous', 'pause']),
+    )
+    expect(getSession().currentMovementIndex).toBe(1)
+    expect(speak).toHaveBeenCalledTimes(narrationAfterPause)
+    await act(async () => releasePause())
+    await waitFor(() =>
+      expect(transitions).toEqual([
+        'next',
+        'next',
+        'previous',
+        'pause',
+        'resume',
+      ]),
+    )
+    expect(getSession().status).toBe('PLAYING')
+    await waitFor(() =>
+      expect(speak.mock.calls.length).toBeGreaterThan(narrationAfterPause),
+    )
+    expect(ask).not.toHaveBeenCalled()
+    expect(getVoiceLatencySamples()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ command: 'pause', phase: 'queue-wait' }),
+      ]),
+    )
+  })
+
+  it('stops the queue after a failed action and accepts newly repeated commands', async () => {
+    let rejectNext: () => void = () => {}
+    let nextCount = 0
+    const { transitions, getSession } = await startVoicePractice(
+      async (action) => {
+        if (action === 'next' && nextCount++ === 0) {
+          await new Promise<void>((resolve) => {
+            rejectNext = resolve
+          })
+          return new Response(
+            JSON.stringify({
+              error: { code: 'TEMPORARY_ERROR', message: 'Reintenta' },
+            }),
+            { status: 500 },
+          )
+        }
+        return undefined
+      },
+    )
+    say('Siguiente')
+    say('Pausar')
+    say('Siguiente')
+    await act(async () => rejectNext())
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Se descartaron los comandos pendientes; repítelos.',
+    )
+    expect(transitions).toEqual(['next'])
+    expect(getSession().currentMovementIndex).toBe(0)
+    await sayAndSettle('Siguiente')
+    expect(transitions).toEqual(['next', 'next'])
+    expect(getSession().currentMovementIndex).toBe(1)
+  })
+
+  it('discards commands behind Finish when its confirmation opens', async () => {
+    let releaseNext: () => void = () => {}
+    const { transitions, getSession } = await startVoicePractice(
+      async (action) => {
+        if (action === 'next')
+          await new Promise<void>((resolve) => {
+            releaseNext = resolve
+          })
+        return undefined
+      },
+    )
+    say('Siguiente')
+    say('Finalizar')
+    say('Pausar')
+    say('Siguiente')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await act(async () => releaseNext())
+    await screen.findByText('Te escucho: «Sí, finalizar» o «Cancelar».')
+    expect(transitions).toEqual(['next'])
+    await sayAndSettle('Cancelar')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(transitions).toEqual(['next'])
+    expect(getSession().currentMovementIndex).toBe(1)
+    expect(getSession().status).toBe('PLAYING')
+  })
+
+  it('does not run queued commands after leaving practice', async () => {
+    let releaseNext: () => void = () => {}
+    const { user, transitions } = await startVoicePractice(async (action) => {
+      if (action === 'next')
+        await new Promise<void>((resolve) => {
+          releaseNext = resolve
+        })
+      return undefined
+    })
+    say('Siguiente')
+    say('Pausar')
+    await user.click(
+      screen.getByRole('link', { name: 'Taichi, elegir rutina' }),
+    )
+    await act(async () => releaseNext())
+    expect(transitions).toEqual(['next'])
+    expect(
+      screen.queryByRole('button', { name: 'Pausar' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('uses the latest movement boundary for queued Next commands', async () => {
+    let releaseNext: () => void = () => {}
+    let nextCount = 0
+    const { transitions, getSession } = await startVoicePractice(
+      async (action) => {
+        if (action === 'next' && nextCount++ === 0)
+          await new Promise<void>((resolve) => {
+            releaseNext = resolve
+          })
+        return undefined
+      },
+    )
+    say('Siguiente')
+    say('Siguiente')
+    say('Siguiente')
+    say('Anterior')
+    await act(async () => releaseNext())
+    await screen.findByText('Te escucho: «Sí, finalizar» o «Cancelar».')
+    expect(transitions).toEqual(['next', 'next'])
+    expect(getSession().currentMovementIndex).toBe(2)
+    await sayAndSettle('Cancelar')
+    expect(transitions).toEqual(['next', 'next'])
+  })
+
+  it('reports overflow and reserves space for immediate Pause without restarting help or repeat', async () => {
+    let releaseNext: () => void = () => {}
+    const { transitions, speak, stop } = await startVoicePractice(
+      async (action) => {
+        if (action === 'next')
+          await new Promise<void>((resolve) => {
+            releaseNext = resolve
+          })
+        return undefined
+      },
+    )
+    say('Siguiente')
+    for (let index = 0; index < 8; index++) say('Repetir')
+    say('Repetir comandos')
+    say('Repetir')
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Hay demasiados comandos pendientes.',
+    )
+    const stopsBeforePause = stop.mock.calls.length
+    say('Pausar')
+    expect(stop).toHaveBeenCalledTimes(stopsBeforePause + 1)
+    const narrationAfterPause = speak.mock.calls.length
+    await act(async () => releaseNext())
+    await screen.findByText('En pausa')
+    expect(transitions).toEqual(['next', 'pause'])
+    expect(speak).toHaveBeenCalledTimes(narrationAfterPause)
+  })
+
+  it('rearms the microphone only after paused command help finishes speaking', async () => {
+    const { speak, transitions } = await startVoicePractice()
+    await sayAndSettle('Pausar')
+    expect(screen.getByText('En pausa')).toBeInTheDocument()
+    let finishHelp: () => void = () => {}
+    speak.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishHelp = resolve
+        }),
+    )
+    await sayAndSettle('Oye, ¿qué acciones puedo realizar?')
+    expect(screen.getByText('Estos son tus comandos')).toBeInTheDocument()
+    expect(screen.queryByText('Micrófono atento')).not.toBeInTheDocument()
+    say('Siguiente')
+    expect(transitions).toEqual(['pause'])
+    await act(async () => finishHelp())
+    expect(screen.getByText('Micrófono atento')).toBeInTheDocument()
+    expect(screen.getByText('En pausa')).toBeInTheDocument()
+    expect(speak).toHaveBeenLastCalledWith(voiceCommandSections.at(-1))
+  })
+
+  it('routes prefixed commands and their variants without opening a Gemini question', async () => {
+    const { transitions, getSession } = await startVoicePractice()
+    const ask = vi.spyOn(voiceServices.ai, 'ask')
+    sayInterim('Oye')
+    say('Oye, paúsalo')
+    await screen.findByText('En pausa')
+    say('Tengo una duda: continúa')
+    await waitFor(() => expect(getSession().status).toBe('PLAYING'))
+    say('Oye, siguiente')
+    await waitFor(() => expect(getSession().currentMovementIndex).toBe(1))
+    say('Oye, anterior')
+    await waitFor(() => expect(getSession().currentMovementIndex).toBe(0))
+    expect(transitions).toEqual(['pause', 'resume', 'next', 'previous'])
+    expect(ask).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    const requests = vi.mocked(fetch).mock.calls.map(([input]) => String(input))
+    expect(requests.some((path) => /\/(ask|questions)$/.test(path))).toBe(false)
+  })
+
+  it('routes a command spoken after a separate wake phrase without leaving a pending question', async () => {
+    const { transitions } = await startVoicePractice()
+    const ask = vi.spyOn(voiceServices.ai, 'ask')
+    say('Oye')
+    expect(screen.getByText('Dinos tu pregunta')).toBeInTheDocument()
+    say('Pausar')
+    await screen.findByText('En pausa')
+    expect(transitions).toEqual(['pause'])
+    expect(screen.queryByText('Dinos tu pregunta')).not.toBeInTheDocument()
+    expect(ask).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('still requires a final confirmation after a prefixed finish command', async () => {
+    const { transitions } = await startVoicePractice()
+    const ask = vi.spyOn(voiceServices.ai, 'ask')
+    say('Oye, finalizar práctica')
+    await screen.findByText('Te escucho: «Sí, finalizar» o «Cancelar».')
+    sayInterim('Sí, finalizar')
+    expect(transitions).not.toContain('complete')
+    say('Cancelar')
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    expect(transitions).not.toContain('complete')
+    expect(ask).not.toHaveBeenCalled()
+  })
+
   it('stops provisional pause audio immediately, rolls back corrections, and executes the confirmed command once', async () => {
     let finishPause: () => void = () => {}
     const { speak, stop, transitions, getSession } = await startVoicePractice(
@@ -176,8 +564,7 @@ describe('practice journey', () => {
     sayInterim('Pausar')
     say('Pausar')
     expect(screen.getByText('Detecté «Pausar». Aplicando…')).toBeInTheDocument()
-    say('Pausar')
-    say('Siguiente')
+    act(() => FakeContinuousRecognition.current.repeatLastResult())
     expect(transitions).toEqual(['pause'])
     expect(screen.getByRole('button', { name: 'Pausar' })).toHaveClass(
       'control-button--active',
@@ -234,7 +621,7 @@ describe('practice journey', () => {
     const beforeFailure = speak.mock.calls.length
     say('Pausar')
     await screen.findByText(
-      'No se pudo ejecutar el comando de voz. Inténtalo de nuevo.',
+      /No se pudo ejecutar el comando de voz\. Inténtalo de nuevo\./,
     )
     expect(speak.mock.calls.length).toBeGreaterThan(beforeFailure)
     expect(screen.getByText('En movimiento')).toBeInTheDocument()
@@ -482,13 +869,13 @@ describe('practice journey', () => {
     expect(
       screen.getByRole('heading', { name: 'Apertura' }),
     ).toBeInTheDocument()
-    say('Pausar')
-    await waitFor(() =>
-      expect(screen.getByText('En pausa')).toBeInTheDocument(),
-    )
+    // Flush the pause request and its React effects before starting another
+    // narration; seeing the paused label alone can precede effect cleanup.
+    await sayAndSettle('Pausar')
+    expect(screen.getByText('En pausa')).toBeInTheDocument()
     const callsBeforePausedHelp = speak.mock.calls.length
-    say('Oye, ¿qué acciones puedo realizar?')
-    await screen.findByText('Micrófono atento')
+    await sayAndSettle('Oye, ¿qué acciones puedo realizar?')
+    expect(screen.getByText('Micrófono atento')).toBeInTheDocument()
     expect(speak).toHaveBeenCalledTimes(
       callsBeforePausedHelp + voiceCommandSections.length,
     )
@@ -579,6 +966,10 @@ describe('practice journey', () => {
     say('Repetir comandos')
     expect(screen.getByText('Estos son tus comandos')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+    expect(
+      screen.getByRole('heading', { name: 'Acariciar la Crin del Caballo' }),
+    ).toBeInTheDocument()
+    await act(async () => finishCancelledHelp())
     await screen.findByRole('heading', {
       name: 'Grulla Blanca Extiende las Alas',
     })

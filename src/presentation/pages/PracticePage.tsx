@@ -6,6 +6,9 @@ import { voiceServices } from '../../app/services'
 import { playVoiceGuide } from '../../application/voiceGuide'
 import {
   recordVoiceLatency,
+  recordVoiceCaptureEvent,
+  type VoiceCaptureEvent,
+  recordVoiceRecognitionLatency,
   type VoiceRecognitionTiming,
 } from '../../application/voiceLatency'
 import {
@@ -23,6 +26,7 @@ import { flattenRoutineMovements } from '../../domain/routines'
 import { api } from '../../infrastructure/api/client'
 import { useAIQuestion } from '../hooks/useAIQuestion'
 import { useContinuousVoiceControl } from '../hooks/useContinuousVoiceControl'
+import { useCommandQueue } from '../hooks/useCommandQueue'
 import { AIQuestionPanel } from '../components/AIQuestionPanel'
 import {
   FinishConfirmation,
@@ -36,6 +40,22 @@ import { VoiceTalkButton } from '../components/VoiceTalkButton'
 
 function formatTime(seconds: number) {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
+}
+
+interface QueuedCommand {
+  command: VoiceCommand
+  timing?: VoiceRecognitionTiming
+  detectedAt: number
+}
+
+const commandNames: Record<VoiceCommand, string> = {
+  pause: 'Pausar',
+  resume: 'Continuar',
+  repeat: 'Repetir',
+  next: 'Siguiente',
+  previous: 'Anterior',
+  finish: 'Finalizar',
+  help: 'Escuchar comandos',
 }
 
 function PracticeExperience({
@@ -65,10 +85,15 @@ function PracticeExperience({
   const [activeCommand, setActiveCommand] = useState<VoiceCommand | null>(null)
   const commandHighlightTimerRef = useRef<number | null>(null)
   const feedbackTimerRef = useRef<number | null>(null)
-  const quickPauseRef = useRef<{ cueIndex: number; timer: number } | null>(null)
+  const quickPauseRef = useRef<{
+    cueIndex: number
+    timer: number
+    captureId?: number
+    resultIndex?: number
+  } | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const narrationRef = useRef<AbortController | null>(null)
-  const commandPendingRef = useRef(false)
+  const pendingPausesRef = useRef(0)
   const finishingRef = useRef(false)
   const finishRequestedRef = useRef(false)
   const finishCueRef = useRef(0)
@@ -121,7 +146,12 @@ function PracticeExperience({
 
   const startNarration = useCallback(
     (fromIndex = 0) => {
-      if (!movement || finishingRef.current || finishRequestedRef.current)
+      if (
+        !movement ||
+        finishingRef.current ||
+        finishRequestedRef.current ||
+        pendingPausesRef.current > 0
+      )
         return
       if (quickPauseRef.current) highlightCommand(null)
       stopNarration()
@@ -156,7 +186,7 @@ function PracticeExperience({
   )
 
   useEffect(() => {
-    if (session.status !== 'PLAYING') return
+    if (session.status !== 'PLAYING' || quickPauseRef.current) return
     startNarration()
     return stopNarration
   }, [session.status, startNarration, stopNarration])
@@ -175,23 +205,16 @@ function PracticeExperience({
     [],
   )
 
-  const next = async () => {
-    if (session.currentMovementIndex === steps.length - 1) {
-      requestFinish()
-    } else {
-      stopNarration()
-      await actions.next()
-    }
-  }
-
-  const ask = (question?: string) => {
+  const ask = (question?: string, timing?: VoiceRecognitionTiming) => {
     if (
       askingRef.current ||
       panelOpen ||
       finishRequestedRef.current ||
       commandPendingRef.current
-    )
+    ) {
+      recordRouting(timing, 'phrase-ignored', 'question-busy')
       return
+    }
     askingRef.current = true
     highlightCommand(null)
     clearWake()
@@ -225,91 +248,167 @@ function PracticeExperience({
     }
   }
 
+  const executeCommand = async (
+    { command, timing, detectedAt }: QueuedCommand,
+    signal: AbortSignal,
+  ) => {
+    const latencyDetails = {
+      captureId: timing?.captureId,
+      resultIndex: timing?.resultIndex,
+    }
+    const actionStarted = performance.now()
+    recordVoiceLatency(
+      command,
+      'queue-wait',
+      detectedAt,
+      'success',
+      actionStarted,
+      latencyDetails,
+    )
+    highlightCommand(command, 0)
+    showVoiceFeedback(`Detecté «${commandNames[command]}». Aplicando…`)
+    try {
+      if (command === 'pause' && session.status === 'PLAYING') {
+        await actions.pause()
+      } else if (command === 'resume' && session.status === 'PAUSED') {
+        await actions.resume()
+      } else if (command === 'repeat') {
+        startNarration()
+      } else if (command === 'next') {
+        if (session.currentMovementIndex === steps.length - 1) {
+          requestFinish(true)
+          return
+        }
+        stopNarration()
+        await actions.next()
+      } else if (command === 'finish') {
+        requestFinish(true)
+        return
+      } else if (command === 'previous' && session.currentMovementIndex > 0) {
+        stopNarration()
+        await actions.previous()
+      } else if (command === 'help' && pendingPausesRef.current === 0) {
+        await explainCommands(true)
+      }
+      if (signal.aborted) return
+      recordVoiceLatency(
+        command,
+        'action',
+        actionStarted,
+        'success',
+        performance.now(),
+        latencyDetails,
+      )
+      highlightCommand(command)
+      showVoiceFeedback(`«${commandNames[command]}» realizado.`, 3000)
+    } catch (error) {
+      if (!signal.aborted)
+        recordVoiceLatency(
+          command,
+          'action',
+          actionStarted,
+          'error',
+          performance.now(),
+          latencyDetails,
+        )
+      throw error
+    } finally {
+      if (command === 'pause') pendingPausesRef.current--
+    }
+  }
+
+  const discardWaitingCommands = () => {
+    for (const item of commandQueue.clearWaiting()) {
+      if (item.command === 'pause') pendingPausesRef.current--
+    }
+  }
+
+  const commandQueue = useCommandQueue(executeCommand, () => {
+    discardWaitingCommands()
+    highlightCommand(null)
+    showVoiceFeedback('')
+    setVoiceNotice(
+      'No se pudo ejecutar el comando de voz. Inténtalo de nuevo. Se descartaron los comandos pendientes; repítelos.',
+    )
+    if (session.status === 'PLAYING')
+      startNarration(
+        activeCue?.movementId === movement?.id ? (activeCue?.index ?? 0) : 0,
+      )
+  })
+  const commandPendingRef = commandQueue.pendingRef
+
   const runCommand = (
     command: VoiceCommand,
     timing?: VoiceRecognitionTiming,
   ) => {
-    if (commandPendingRef.current) return
-    setVoiceNotice('')
+    if (
+      finishRequestedRef.current ||
+      finishingRef.current ||
+      panelOpen ||
+      openingQuestion ||
+      session.status === 'ASKING'
+    )
+      return
     const detectedAt = performance.now()
-    highlightCommand(command)
-    if (timing)
-      recordVoiceLatency(
-        command,
-        'recognition',
-        Math.min(
-          timing.speechEndedAt ?? timing.firstResultAt,
-          timing.receivedAt,
-        ),
-        'success',
-        timing.receivedAt,
-      )
-    const names: Record<VoiceCommand, string> = {
-      pause: 'Pausar',
-      resume: 'Continuar',
-      repeat: 'Repetir',
-      next: 'Siguiente',
-      previous: 'Anterior',
-      finish: 'Finalizar',
-      help: 'Escuchar comandos',
+    if (timing) recordVoiceRecognitionLatency(command, timing)
+    const wasPending = commandPendingRef.current
+    // Reserve one extra slot for Pause when ordinary commands fill the queue.
+    const accepted = commandQueue.enqueue(
+      { command, timing, detectedAt },
+      command === 'pause',
+    )
+    if (command === 'pause') {
+      if (accepted) pendingPausesRef.current++
+      const alreadyStopped =
+        timing?.captureId !== undefined &&
+        timing.resultIndex !== undefined &&
+        quickPauseRef.current?.captureId === timing.captureId &&
+        quickPauseRef.current.resultIndex === timing.resultIndex
+      stopNarration()
+      if (!alreadyStopped)
+        recordVoiceLatency(
+          command,
+          'audio-stop',
+          timing?.receivedAt ?? detectedAt,
+          'success',
+          performance.now(),
+          {
+            captureId: timing?.captureId,
+            resultIndex: timing?.resultIndex,
+            audioStopBasis: timing ? 'final' : 'button',
+          },
+        )
     }
-    showVoiceFeedback(`Detecté «${names[command]}».`, 3000)
-    if (command === 'help') {
-      explainCommands()
+    if (!accepted) {
+      recordRouting(timing, 'queue-full', undefined, command)
+      setVoiceNotice(
+        'Hay demasiados comandos pendientes. Espera a que terminen y repite el comando.',
+      )
       return
     }
-    const fromIndex =
-      quickPauseRef.current?.cueIndex ??
-      (activeCue?.movementId === movement?.id ? (activeCue?.index ?? 0) : 0)
-    let task: Promise<void> | undefined
-    if (command === 'pause' && session.status === 'PLAYING') {
-      stopNarration()
-      recordVoiceLatency(
-        command,
-        'audio-stop',
-        timing?.receivedAt ?? detectedAt,
+    recordRouting(timing, 'command-queued', undefined, command)
+    setVoiceNotice('')
+    if (wasPending)
+      showVoiceFeedback(
+        `«${commandNames[command]}» en espera. Se aplicará en orden.`,
       )
-      task = actions.pause()
-    } else if (command === 'resume' && session.status === 'PAUSED') {
-      task = actions.resume()
-    } else if (command === 'repeat') {
-      startNarration()
-    } else if (command === 'next') {
-      if (session.currentMovementIndex === steps.length - 1) {
-        requestFinish()
-        return
-      }
-      task = next()
-    } else if (command === 'finish') {
-      requestFinish()
-      return
-    } else if (command === 'previous' && session.currentMovementIndex > 0) {
-      stopNarration()
-      task = actions.previous()
-    }
-    if (task) {
-      commandPendingRef.current = true
-      highlightCommand(command, 0)
-      showVoiceFeedback(`Detecté «${names[command]}». Aplicando…`)
-      void task
-        .then(() => {
-          recordVoiceLatency(command, 'action', detectedAt)
-          highlightCommand(command)
-          showVoiceFeedback(`«${names[command]}» realizado.`, 3000)
-        })
-        .catch(() => {
-          recordVoiceLatency(command, 'action', detectedAt, 'error')
-          highlightCommand(null)
-          showVoiceFeedback('')
-          setVoiceNotice(
-            'No se pudo ejecutar el comando de voz. Inténtalo de nuevo.',
-          )
-          if (session.status === 'PLAYING') startNarration(fromIndex)
-        })
-        .finally(() => {
-          commandPendingRef.current = false
-        })
-    }
+  }
+
+  const recordRouting = (
+    timing: VoiceRecognitionTiming | undefined,
+    name: 'command-queued' | 'queue-full' | 'phrase-ignored',
+    reason?: VoiceCaptureEvent['reason'],
+    command?: VoiceCommand,
+  ) => {
+    if (timing?.captureId === undefined) return
+    recordVoiceCaptureEvent({
+      name,
+      reason,
+      command,
+      captureId: timing.captureId,
+      captureKind: mic.mode,
+      resultIndex: timing.resultIndex,
+    })
   }
 
   const handleVoicePhrase = (
@@ -335,10 +434,14 @@ function PracticeExperience({
       }
     }
     if (finishRequestedRef.current) {
-      if (finishPromptSpeaking || finishingRef.current) return
+      if (finishPromptSpeaking || finishingRef.current) {
+        recordRouting(timing, 'phrase-ignored', 'confirmation-prompt')
+        return
+      }
       const answer = parseFinishConfirmation(transcript)
-      if (answer === 'confirm') confirmFinish()
+      if (answer === 'confirm') confirmFinish(timing)
       else if (answer === 'cancel') cancelFinish()
+      else recordRouting(timing, 'phrase-ignored', 'unmatched')
       return
     }
     if (panelOpen) {
@@ -351,15 +454,16 @@ function PracticeExperience({
       ) {
         mic.suspendNow()
         void continueRoutine()
-      }
+      } else recordRouting(timing, 'phrase-ignored', 'panel-open')
       return
     }
-    if (session.status === 'ASKING') return
+    if (session.status === 'ASKING') {
+      recordRouting(timing, 'phrase-ignored', 'session-asking')
+      return
+    }
     const detectedIntent = parseVoiceIntent(transcript)
-    if (
-      detectedIntent?.type === 'command' &&
-      (detectedIntent.command === 'help' || detectedIntent.command === 'finish')
-    ) {
+    if (detectedIntent?.type === 'command') {
+      clearWake()
       runCommand(detectedIntent.command, timing)
       return
     }
@@ -370,7 +474,7 @@ function PracticeExperience({
     if (wakeDeadlineRef.current > Date.now()) {
       clearWake()
       const intent = parseVoiceIntent(transcript)
-      ask(intent?.type === 'wake' ? intent.question : transcript.trim())
+      ask(intent?.type === 'wake' ? intent.question : transcript.trim(), timing)
       return
     }
     if (wakeDeadlineRef.current) clearWake()
@@ -381,14 +485,17 @@ function PracticeExperience({
       if (session.status === 'PLAYING' && intent?.type !== 'command')
         startNarration()
     }
-    if (!intent) return
+    if (!intent) {
+      recordRouting(timing, 'phrase-ignored', 'unmatched')
+      return
+    }
     if (intent.type === 'command') {
       runCommand(intent.command, timing)
       return
     }
     if (intent.question) {
       interimWakeRef.current = false
-      ask(intent.question)
+      ask(intent.question, timing)
       return
     }
     stopNarration()
@@ -407,8 +514,13 @@ function PracticeExperience({
   ) => {
     if (finishRequestedRef.current) return
     if (panelOpen || openingQuestion || session.status === 'ASKING') return
-    if (commandPendingRef.current || announcement) return
+    if (announcement) return
     const intent = parseVoiceIntent(transcript)
+    if (
+      commandPendingRef.current &&
+      !(intent?.type === 'command' && intent.command === 'pause')
+    )
+      return
     if (
       intent?.type === 'command' &&
       intent.command === 'pause' &&
@@ -422,10 +534,23 @@ function PracticeExperience({
       const detectedAt = timing?.receivedAt ?? performance.now()
       stopNarration()
       highlightCommand('pause', 0)
-      recordVoiceLatency('pause', 'audio-stop', detectedAt)
+      recordVoiceLatency(
+        'pause',
+        'audio-stop',
+        detectedAt,
+        'success',
+        performance.now(),
+        {
+          captureId: timing?.captureId,
+          resultIndex: timing?.resultIndex,
+          audioStopBasis: 'interim',
+        },
+      )
       showVoiceFeedback('Detecté «Pausar». Confirmando…')
       quickPauseRef.current = {
         cueIndex,
+        captureId: timing?.captureId,
+        resultIndex: timing?.resultIndex,
         timer: window.setTimeout(() => {
           quickPauseRef.current = null
           highlightCommand(null)
@@ -466,17 +591,18 @@ function PracticeExperience({
     handleInterimPhrase,
   )
 
-  const requestFinish = () => {
+  const requestFinish = (fromQueue = false) => {
     if (
       finishRequestedRef.current ||
       finishingRef.current ||
-      commandPendingRef.current ||
+      (!fromQueue && commandPendingRef.current) ||
       panelOpen ||
       openingQuestion ||
       session.status === 'ASKING'
     )
       return
     finishRequestedRef.current = true
+    discardWaitingCommands()
     finishCueRef.current =
       activeCue && activeCue.movementId === movement?.id ? activeCue.index : 0
     clearWake()
@@ -507,21 +633,39 @@ function PracticeExperience({
     if (session.status === 'PLAYING') startNarration(finishCueRef.current)
   }
 
-  const confirmFinish = () => {
+  const confirmFinish = (timing?: VoiceRecognitionTiming) => {
     if (!finishRequestedRef.current || finishingRef.current) return
     finishingRef.current = true
     setFinishPending(true)
     stopNarration()
     mic.suspendNow()
     const actionStarted = performance.now()
+    const latencyDetails = {
+      captureId: timing?.captureId,
+      resultIndex: timing?.resultIndex,
+    }
     void actions
       .complete()
       .then(() => {
-        recordVoiceLatency('finish', 'action', actionStarted)
+        recordVoiceLatency(
+          'finish',
+          'action',
+          actionStarted,
+          'success',
+          performance.now(),
+          latencyDetails,
+        )
         navigate('/resumen')
       })
       .catch(() => {
-        recordVoiceLatency('finish', 'action', actionStarted, 'error')
+        recordVoiceLatency(
+          'finish',
+          'action',
+          actionStarted,
+          'error',
+          performance.now(),
+          latencyDetails,
+        )
         finishingRef.current = false
         setFinishPromptSpeaking(false)
         setFinishError(
@@ -531,14 +675,14 @@ function PracticeExperience({
       .finally(() => setFinishPending(false))
   }
 
-  const explainCommands = () => {
+  const explainCommands = (fromQueue = false) => {
     if (
       panelOpen ||
       openingQuestion ||
       session.status === 'ASKING' ||
       finishRequestedRef.current ||
       finishingRef.current ||
-      commandPendingRef.current
+      (!fromQueue && commandPendingRef.current)
     )
       return
     highlightCommand('help')
@@ -552,16 +696,21 @@ function PracticeExperience({
     const controller = new AbortController()
     narrationRef.current = controller
     setSpeechError(false)
-    void playCommandHelp(voiceServices.tts, controller.signal, setAnnouncement)
+    return playCommandHelp(
+      voiceServices.tts,
+      controller.signal,
+      setAnnouncement,
+    )
       .then(() => {
         if (controller.signal.aborted) return
         setAnnouncement(null)
         if (wasPlaying) startNarration(fromIndex)
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!controller.signal.aborted) {
           setAnnouncement(null)
           setSpeechError(true)
+          throw error
         }
       })
   }
@@ -767,7 +916,7 @@ function PracticeExperience({
                 )}
                 <button
                   className={`voice-console-toggle${activeCommand === 'help' ? ' voice-console-toggle--active' : ''}`}
-                  onClick={explainCommands}
+                  onClick={() => runCommand('help')}
                 >
                   Escuchar comandos
                 </button>
@@ -926,7 +1075,7 @@ function PracticeExperience({
           speaking={finishPromptSpeaking}
           listening={mic.status === 'listening'}
           error={finishError}
-          onConfirm={confirmFinish}
+          onConfirm={() => confirmFinish()}
           onCancel={cancelFinish}
           talkControl={
             mic.mode === 'push-to-talk'

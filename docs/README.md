@@ -9,6 +9,8 @@ Taichi es una aplicación educativa para guiar rutinas de movimiento con apoyo d
 - [Reglas de negocio](BUSINESS_RULES.md): invariantes con identificadores.
 - [Flujos de usuario](USER_FLOWS.md): práctica, preguntas y errores.
 - [Integración de IA](AI_INTEGRATION.md): contratos y sustitución de adaptadores.
+- [Plan de mejoras de voz](VOICE_IMPROVEMENT_PLAN.md): investigación, fases, arquitectura, pruebas y criterios para VAD, activación local y enrutamiento sin Gemini.
+- [Mediciones de voz y HTTP](VOICE_HTTP_FINDINGS.md): muestra real, diagnóstico de base de datos, correcciones y límites pendientes.
 - [API REST](API.md): endpoints, contratos, errores y configuración.
 - [Sistema visual](DESIGN_SYSTEM.md): tokens y uso 60/30/10.
 - [Modelos](DATA_MODELS.md), [estructura](PROJECT_STRUCTURE.md) y [estado](STATE_MANAGEMENT.md).

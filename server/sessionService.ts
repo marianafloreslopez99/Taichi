@@ -3,6 +3,7 @@ import { Prisma, type PrismaClient } from '@prisma/client'
 import type { SessionStatus } from '../src/domain/models.js'
 import type { AIContext } from '../src/application/ports.js'
 import { HttpError } from './http.js'
+import type { MeasureSessionOperation } from './sessionTiming.js'
 import {
   routineInclude,
   serializeRoutine,
@@ -40,12 +41,9 @@ function transitionError(message: string) {
   return new HttpError(409, 'INVALID_SESSION_TRANSITION', message)
 }
 
-async function getSession(prisma: PrismaClient, id: string) {
+async function requireSession<T>(operation: Promise<T>): Promise<T> {
   try {
-    return await prisma.session.findUniqueOrThrow({
-      where: { id },
-      include: sessionInclude,
-    })
+    return await operation
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -55,6 +53,15 @@ async function getSession(prisma: PrismaClient, id: string) {
     }
     throw error
   }
+}
+
+async function getSession(prisma: PrismaClient, id: string) {
+  return requireSession(
+    prisma.session.findUniqueOrThrow({
+      where: { id },
+      include: sessionInclude,
+    }),
+  )
 }
 
 async function saveElapsed(prisma: PrismaClient, session: SessionRecord) {
@@ -131,14 +138,12 @@ export async function transitionSession(
     | 'ask'
     | 'close-question'
     | 'complete',
+  measure: MeasureSessionOperation = async (_stage, operation) => operation(),
 ) {
-  const initial = await getSession(prisma, id)
-  const session = await saveElapsed(prisma, initial)
-  const movementCount = await prisma.movement.count({
-    where: {
-      exercise: { routines: { some: { routineId: session.routineId } } },
-    },
-  })
+  // Transition validation only needs session fields. Questions are returned by the final write.
+  const session = await measure('db-read', () =>
+    requireSession(prisma.session.findUniqueOrThrow({ where: { id } })),
+  )
   let data: {
     status?: SessionStatus
     currentMovementIndex?: number
@@ -155,10 +160,18 @@ export async function transitionSession(
       throw transitionError('Solo se puede continuar una sesión pausada.')
     data = { status: 'PLAYING', elapsedSeconds: session.elapsedSeconds }
   } else if (action === 'next') {
-    if (
-      !['PLAYING', 'PAUSED'].includes(session.status) ||
-      session.currentMovementIndex >= movementCount - 1
-    ) {
+    if (!['PLAYING', 'PAUSED'].includes(session.status))
+      throw transitionError(
+        'No se puede avanzar desde este estado o movimiento.',
+      )
+    const movementCount = await measure('db-movement-count', () =>
+      prisma.movement.count({
+        where: {
+          exercise: { routines: { some: { routineId: session.routineId } } },
+        },
+      }),
+    )
+    if (session.currentMovementIndex >= movementCount - 1) {
       throw transitionError(
         'No se puede avanzar desde este estado o movimiento.',
       )
@@ -203,11 +216,13 @@ export async function transitionSession(
     }
   }
 
-  const updated = await prisma.session.update({
-    where: { id },
-    data,
-    include: sessionInclude,
-  })
+  const updated = await measure('db-write', () =>
+    prisma.session.update({
+      where: { id },
+      data,
+      include: sessionInclude,
+    }),
+  )
   return serializeSession(updated)
 }
 

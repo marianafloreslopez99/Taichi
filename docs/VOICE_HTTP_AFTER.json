@@ -1,0 +1,63 @@
+{
+  "measuredAt": "2026-10-15T01:34:33.751Z",
+  "method": "Sequential HTTP via Vite proxy, disposable session, no microphone or Gemini",
+  "cycles": 2,
+  "samples": [
+    {
+      "cycle": 1,
+      "action": "pause",
+      "httpMs": 1818.6686,
+      "headersMs": 1818.3871000000008,
+      "serverTiming": "server;dur=1813.047, db-read;dur=358.288, db-write;dur=1454.355"
+    },
+    {
+      "cycle": 1,
+      "action": "resume",
+      "httpMs": 1277.1802000000007,
+      "headersMs": 1276.9360000000006,
+      "serverTiming": "server;dur=1272.341, db-read;dur=180.374, db-write;dur=1091.930"
+    },
+    {
+      "cycle": 1,
+      "action": "next",
+      "httpMs": 1669.1139000000003,
+      "headersMs": 1668.7495999999992,
+      "serverTiming": "server;dur=1664.452, db-read;dur=185.937, db-movement-count;dur=179.279, db-write;dur=1299.180"
+    },
+    {
+      "cycle": 1,
+      "action": "previous",
+      "httpMs": 1262.8834000000006,
+      "headersMs": 1262.5170000000016,
+      "serverTiming": "server;dur=1258.402, db-read;dur=180.624, db-write;dur=1077.723"
+    },
+    {
+      "cycle": 2,
+      "action": "pause",
+      "httpMs": 1284.619999999999,
+      "headersMs": 1284.3251999999993,
+      "serverTiming": "server;dur=1280.428, db-read;dur=181.494, db-write;dur=1098.849"
+    },
+    {
+      "cycle": 2,
+      "action": "resume",
+      "httpMs": 1280.4123,
+      "headersMs": 1280.1869000000006,
+      "serverTiming": "server;dur=1276.406, db-read;dur=180.881, db-write;dur=1095.471"
+    },
+    {
+      "cycle": 2,
+      "action": "next",
+      "httpMs": 1449.7839999999997,
+      "headersMs": 1449.4819000000007,
+      "serverTiming": "server;dur=1443.861, db-read;dur=181.012, db-movement-count;dur=186.590, db-write;dur=1076.171"
+    },
+    {
+      "cycle": 2,
+      "action": "previous",
+      "httpMs": 1276.3567999999996,
+      "headersMs": 1276.1283999999996,
+      "serverTiming": "server;dur=1271.544, db-read;dur=179.494, db-write;dur=1091.980"
+    }
+  ]
+}

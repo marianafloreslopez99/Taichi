@@ -1,5 +1,7 @@
 import type { AIResponse } from '../../application/ports'
 import type { PracticeSession, Routine } from '../../domain/models'
+import type { VoiceCommand } from '../../application/voiceIntent'
+import { recordSessionRequestTiming } from '../../application/sessionRequestTiming'
 
 const apiBase = '/api/v1'
 
@@ -13,24 +15,52 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${apiBase}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as {
-      error?: { code?: string; message?: string }
-    } | null
-    throw new ApiError(
-      response.status,
-      body?.error?.code ?? 'API_ERROR',
-      body?.error?.message ?? 'No se pudo completar la solicitud.',
-    )
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  command?: VoiceCommand,
+): Promise<T> {
+  const startedAt = performance.now()
+  let headersAt: number | undefined
+  let response: Response | undefined
+  let outcome: 'success' | 'error' = 'error'
+  try {
+    response = await fetch(`${apiBase}${path}`, {
+      ...init,
+      headers: { 'Content-Type': 'application/json', ...init?.headers },
+    })
+    headersAt = performance.now()
+    if (!response.ok) {
+      const body = (await response.json().catch(() => null)) as {
+        error?: { code?: string; message?: string }
+      } | null
+      throw new ApiError(
+        response.status,
+        body?.error?.code ?? 'API_ERROR',
+        body?.error?.message ?? 'No se pudo completar la solicitud.',
+      )
+    }
+    if (response.status === 204) {
+      outcome = 'success'
+      return undefined as T
+    }
+    const body = (await response.json()) as { data: T }
+    outcome = 'success'
+    return body.data
+  } finally {
+    if (command)
+      recordSessionRequestTiming(
+        command,
+        {
+          startedAt,
+          headersAt,
+          endedAt: performance.now(),
+          httpStatus: response?.status,
+          serverTiming: response?.headers.get('Server-Timing'),
+        },
+        outcome,
+      )
   }
-  if (response.status === 204) return undefined as T
-  const body = (await response.json()) as { data: T }
-  return body.data
 }
 
 export const api = {
@@ -54,9 +84,17 @@ export const api = {
       | 'close-question'
       | 'complete',
   ) =>
-    request<PracticeSession>(`/sessions/${sessionId}/${action}`, {
-      method: 'POST',
-    }),
+    request<PracticeSession>(
+      `/sessions/${sessionId}/${action}`,
+      {
+        method: 'POST',
+      },
+      action === 'complete'
+        ? 'finish'
+        : action === 'ask' || action === 'close-question'
+          ? undefined
+          : action,
+    ),
   createQuestion: (
     sessionId: string,
     movementId: string,

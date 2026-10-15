@@ -9,9 +9,12 @@ export type VoiceIntent =
 const commands: Record<string, VoiceCommand> = {
   pausar: 'pause',
   pausa: 'pause',
+  pausalo: 'pause',
   continuar: 'resume',
+  continua: 'resume',
   reproducir: 'resume',
   repetir: 'repeat',
+  repite: 'repeat',
   siguiente: 'next',
   anterior: 'previous',
   finalizar: 'finish',
@@ -34,6 +37,12 @@ function normalizeCommand(text: string) {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase('es')
+    .replace(/\s+/g, ' ')
+}
+
+function findCommand(text: string): VoiceCommand | undefined {
+  const normalized = normalizeCommand(text)
+  return Object.hasOwn(commands, normalized) ? commands[normalized] : undefined
 }
 
 export function parseFinishConfirmation(
@@ -66,18 +75,17 @@ export function parseVoiceIntent(transcript: string): VoiceIntent {
   const spoken = transcript.trim().replace(/^[\s¡¿.,:;!?-]+/g, '')
   if (!spoken) return null
 
-  const wake = /^(oye|tengo una duda)(?=$|[\s¡¿.,:;!?-])/i.exec(spoken)
+  const wake = /^(oye|tengo\s+una\s+duda)(?=$|[\s¡¿.,:;!?-])/i.exec(spoken)
   if (wake) {
     const question = spoken
       .slice(wake[0].length)
       .replace(/^[\s¡¿.,:;!?-]+/, '')
       .trim()
-    if (commands[normalizeCommand(question)] === 'help')
-      return { type: 'command', command: 'help' }
+    const command = findCommand(question)
+    if (command) return { type: 'command', command }
     return { type: 'wake', question }
   }
 
-  const normalized = normalizeCommand(spoken)
-  const command = commands[normalized]
+  const command = findCommand(spoken)
   return command ? { type: 'command', command } : null
 }

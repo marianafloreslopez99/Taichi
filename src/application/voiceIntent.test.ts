@@ -2,12 +2,26 @@ import { describe, expect, it } from 'vitest'
 import { parseFinishConfirmation, parseVoiceIntent } from './voiceIntent'
 
 describe('parseVoiceIntent', () => {
+  it.each(['constructor', '__proto__', 'hasOwnProperty'])(
+    'does not treat an object property as a voice command: %s',
+    (text) => {
+      expect(parseVoiceIntent(text)).toBeNull()
+      expect(parseVoiceIntent(`Oye, ${text}`)).toEqual({
+        type: 'wake',
+        question: text,
+      })
+    },
+  )
+
   it.each([
     ['Pausar', 'pause'],
     ['pausa.', 'pause'],
+    ['Paúsalo', 'pause'],
     ['Continuar', 'resume'],
+    ['Continúa', 'resume'],
     ['REPRODUCIR', 'resume'],
     ['Repetir', 'repeat'],
+    ['Repite', 'repeat'],
     ['Siguiente', 'next'],
     ['Anterior', 'previous'],
     ['Finalizar', 'finish'],
@@ -19,6 +33,35 @@ describe('parseVoiceIntent', () => {
     ['Oye, ¿qué comandos puedo usar?', 'help'],
   ] as const)('recognizes the isolated command %s', (transcript, command) => {
     expect(parseVoiceIntent(transcript)).toEqual({ type: 'command', command })
+  })
+
+  it.each([
+    ['Oye, pausar', 'pause'],
+    ['Oye, paúsalo.', 'pause'],
+    ['Tengo una duda: continúa', 'resume'],
+    ['Oye, repite', 'repeat'],
+    ['Tengo   una duda: siguiente', 'next'],
+    ['Oye, anterior', 'previous'],
+    ['Oye, finalizar práctica', 'finish'],
+    ['Tengo una duda, repetir comandos', 'help'],
+  ] as const)(
+    'routes the complete command after activation: %s',
+    (text, command) => {
+      expect(parseVoiceIntent(text)).toEqual({ type: 'command', command })
+    },
+  )
+
+  it.each([
+    'No pauses',
+    'No continúes',
+    'Pausar no, mejor siguiente',
+    'Quiero repetirlo mañana',
+    '¿Cómo hago el siguiente movimiento?',
+  ])('does not execute a command inferred from a longer phrase: %s', (text) => {
+    expect(parseVoiceIntent(text)).toBeNull()
+    expect(parseVoiceIntent(`Oye, ${text}`)).toMatchObject({
+      type: 'wake',
+    })
   })
 
   it('ignores matching words inside background conversations', () => {

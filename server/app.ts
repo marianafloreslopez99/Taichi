@@ -1,6 +1,8 @@
 import express from 'express'
 import { z } from 'zod'
 import { prisma } from './db.js'
+import { env } from './config.js'
+import { createSessionTiming } from './sessionTiming.js'
 import {
   asyncRoute,
   errorHandler,
@@ -135,9 +137,21 @@ export function createApp(
       `/sessions/:sessionId/${action}`,
       asyncRoute(async (request, response) => {
         const { sessionId } = params(sessionIdParams, request.params)
-        response.json({
-          data: await transitionSession(prisma, sessionId, action),
-        })
+        const timing =
+          env.NODE_ENV === 'development' ? createSessionTiming() : undefined
+        try {
+          const data = await transitionSession(
+            prisma,
+            sessionId,
+            action,
+            timing?.measure,
+          )
+          if (timing) response.setHeader('Server-Timing', timing.header())
+          response.json({ data })
+        } catch (error) {
+          if (timing) response.setHeader('Server-Timing', timing.header())
+          throw error
+        }
       }),
     )
   }

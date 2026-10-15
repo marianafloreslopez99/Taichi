@@ -1,0 +1,63 @@
+{
+  "measuredAt": "2026-10-15T01:24:57.119Z",
+  "method": "Sequential HTTP via Vite proxy, disposable session, no microphone or Gemini",
+  "cycles": 2,
+  "samples": [
+    {
+      "cycle": 1,
+      "action": "pause",
+      "httpMs": 3432.7969000000003,
+      "headersMs": 3432.4273999999996,
+      "serverTiming": "server;dur=3426.660, db-read;dur=544.019, db-elapsed;dur=1440.251, db-movement-count;dur=185.201, db-write;dur=1256.898"
+    },
+    {
+      "cycle": 1,
+      "action": "resume",
+      "httpMs": 1623.0133999999998,
+      "headersMs": 1622.7474999999995,
+      "serverTiming": "server;dur=1617.848, db-read;dur=360.669, db-elapsed;dur=0.003, db-movement-count;dur=179.279, db-write;dur=1077.853"
+    },
+    {
+      "cycle": 1,
+      "action": "next",
+      "httpMs": 2906.077799999999,
+      "headersMs": 2905.6144999999997,
+      "serverTiming": "server;dur=2900.855, db-read;dur=360.597, db-elapsed;dur=1089.170, db-movement-count;dur=186.278, db-write;dur=1264.709"
+    },
+    {
+      "cycle": 1,
+      "action": "previous",
+      "httpMs": 2735.3655,
+      "headersMs": 2735.0030000000006,
+      "serverTiming": "server;dur=2730.379, db-read;dur=359.089, db-elapsed;dur=1094.414, db-movement-count;dur=181.364, db-write;dur=1095.429"
+    },
+    {
+      "cycle": 2,
+      "action": "pause",
+      "httpMs": 2937.014400000002,
+      "headersMs": 2936.7349000000013,
+      "serverTiming": "server;dur=2932.810, db-read;dur=363.758, db-elapsed;dur=1101.114, db-movement-count;dur=365.748, db-write;dur=1102.101"
+    },
+    {
+      "cycle": 2,
+      "action": "resume",
+      "httpMs": 1666.3358999999982,
+      "headersMs": 1666.1092999999964,
+      "serverTiming": "server;dur=1662.559, db-read;dur=367.731, db-elapsed;dur=0.008, db-movement-count;dur=185.371, db-write;dur=1109.393"
+    },
+    {
+      "cycle": 2,
+      "action": "next",
+      "httpMs": 2775.4122000000025,
+      "headersMs": 2775.0831,
+      "serverTiming": "server;dur=2770.113, db-read;dur=363.800, db-elapsed;dur=1109.297, db-movement-count;dur=183.138, db-write;dur=1113.804"
+    },
+    {
+      "cycle": 2,
+      "action": "previous",
+      "httpMs": 2753.3937000000005,
+      "headersMs": 2753.2245000000003,
+      "serverTiming": "server;dur=2748.843, db-read;dur=369.816, db-elapsed;dur=1100.667, db-movement-count;dur=178.939, db-write;dur=1099.343"
+    }
+  ]
+}

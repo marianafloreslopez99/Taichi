@@ -1,4 +1,14 @@
 import type { SpeechToTextService } from '../../application/ports'
+import {
+  nextVoiceCaptureId,
+  recordVoiceCaptureEvent,
+  type VoiceCaptureEvent,
+} from '../../application/voiceLatency'
+import {
+  VoiceController,
+  type VoiceIntervention,
+} from '../../application/voiceController'
+import { VOICE_FINALIZATION_TIMEOUT_MS } from '../../application/voiceConfig'
 
 interface RecognitionResult {
   isFinal: boolean
@@ -13,6 +23,8 @@ interface Recognition {
   lang: string
   continuous: boolean
   interimResults: boolean
+  onstart?: (() => void) | null
+  onspeechend?: (() => void) | null
   onresult: ((event: RecognitionEvent) => void) | null
   onerror: ((event: { error: string }) => void) | null
   onend: (() => void) | null
@@ -28,6 +40,9 @@ type RecognitionWindow = Window & {
 
 export class BrowserSpeechToTextAdapter implements SpeechToTextService {
   private active: Recognition | null = null
+  private cancelActive: (() => void) | null = null
+
+  constructor(private readonly controller = new VoiceController()) {}
 
   listen(
     signal?: AbortSignal,
@@ -50,45 +65,124 @@ export class BrowserSpeechToTextAdapter implements SpeechToTextService {
     this.stop()
     const recognition = new Constructor()
     this.active = recognition
+    const captureId = nextVoiceCaptureId()
+    const recordEvent = (
+      name: VoiceCaptureEvent['name'],
+      resultIndex?: number,
+    ) =>
+      recordVoiceCaptureEvent({
+        name,
+        captureId,
+        captureKind: 'question',
+        ...(resultIndex !== undefined ? { resultIndex } : {}),
+      })
     recognition.lang = 'es-MX'
     recognition.continuous = false
     recognition.interimResults = true
 
     return new Promise<string>((resolve, reject) => {
       let settled = false
+      let intervention: VoiceIntervention | null = null
+      let finalizationTimer: number | null = null
       let finalText = ''
+      const firstInterim = new Set<number>()
+      const finalResults = new Set<number>()
       const finish = (error?: Error) => {
         if (settled) return
         settled = true
+        if (finalizationTimer !== null) window.clearTimeout(finalizationTimer)
         signal?.removeEventListener('abort', cancel)
         recognition.onresult = null
         recognition.onerror = null
         recognition.onend = null
-        if (this.active === recognition) this.active = null
+        recognition.onstart = null
+        recognition.onspeechend = null
+        this.controller.end(intervention)
+        if (this.active === recognition) {
+          this.active = null
+          this.cancelActive = null
+        }
         if (error) reject(error)
         else if (finalText.trim()) resolve(finalText.trim())
         else
           reject(new Error('No se escuchó una pregunta. Inténtalo de nuevo.'))
       }
       const cancel = () => {
-        recognition.abort()
+        if (settled) return
+        recordEvent('cancel-requested')
         finish(new DOMException('Cancelado', 'AbortError'))
+        try {
+          recognition.abort()
+        } catch {
+          /* Already disconnected. */
+        }
       }
+      this.cancelActive = cancel
       signal?.addEventListener('abort', cancel, { once: true })
+      const isCurrent = () =>
+        !settled && this.controller.isCurrent(intervention)
+      recognition.onstart = () => {
+        if (isCurrent()) recordEvent('started')
+      }
+      recognition.onspeechend = () => {
+        if (isCurrent()) recordEvent('speech-ended')
+      }
       recognition.onresult = (event) => {
+        if (!isCurrent()) return
         let interim = ''
         let completed = ''
         for (let index = 0; index < event.results.length; index += 1) {
           const result = event.results[index]
           if (!result) continue
-          if (result.isFinal) completed += `${result[0].transcript} `
-          else interim += `${result[0].transcript} `
+          if (result.isFinal) {
+            completed += `${result[0].transcript} `
+            if (!finalResults.has(index)) {
+              finalResults.add(index)
+              recordEvent('final-result', index)
+            }
+          } else {
+            interim += `${result[0].transcript} `
+            if (!firstInterim.has(index)) {
+              firstInterim.add(index)
+              recordEvent('first-interim', index)
+            }
+          }
         }
         finalText = completed.trim()
         onInterim?.(`${completed}${interim}`.trim())
-        if (finalText) recognition.stop()
+        if (finalText && this.controller.requestFinish(intervention)) {
+          recordEvent('finish-requested')
+          finalizationTimer = window.setTimeout(() => {
+            if (!isCurrent()) return
+            recordEvent('finalization-timeout')
+            // A definitive transcript is already available. Release the browser
+            // even if it fails to deliver end, without submitting an interim.
+            finish()
+            try {
+              recognition.abort()
+            } catch {
+              /* Already disconnected. */
+            }
+          }, VOICE_FINALIZATION_TIMEOUT_MS)
+          try {
+            recognition.stop()
+          } catch (error) {
+            finish(
+              error instanceof Error
+                ? error
+                : new Error('No se pudo finalizar el micrófono.'),
+            )
+            try {
+              recognition.abort()
+            } catch {
+              /* Already disconnected. */
+            }
+          }
+        }
       }
       recognition.onerror = (event) => {
+        if (!isCurrent()) return
+        recordEvent('error')
         const error =
           event.error === 'not-allowed' || event.error === 'service-not-allowed'
             ? new DOMException('Permiso denegado', 'NotAllowedError')
@@ -101,8 +195,14 @@ export class BrowserSpeechToTextAdapter implements SpeechToTextService {
                 )
         finish(error)
       }
-      recognition.onend = () => finish()
+      recognition.onend = () => {
+        if (!isCurrent()) return
+        recordEvent('ended')
+        finish()
+      }
       try {
+        intervention = this.controller.begin(captureId, 'question', cancel)
+        recordEvent('start-requested')
         recognition.start()
       } catch (error) {
         finish(
@@ -115,7 +215,6 @@ export class BrowserSpeechToTextAdapter implements SpeechToTextService {
   }
 
   stop(): void {
-    this.active?.abort()
-    this.active = null
+    this.cancelActive?.()
   }
 }

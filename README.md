@@ -23,6 +23,8 @@ El inventario de dependencias está en [requirements.txt](requirements.txt). Par
 
 Abra la URL indicada por Vite. Para verificar: `npm run typecheck`, `npm run lint`, `npm run test` y `npm run build`. `npm run format` aplica Prettier.
 
+`npm run build` establece `NODE_ENV=production` en su proceso antes de cargar Vite. Así, el `NODE_ENV=development` del `.env` local puede seguir usándose para el backend sin incluir React de desarrollo ni la interfaz de diagnóstico de voz en el frontend publicado. Las mediciones de voz se recogen desde la consola de `npm run dev`, según [Control por voz](docs/VOICE_CONTROL.md).
+
 ## Alcance
 
 Puede elegir entre siete rutinas, recorrer sus movimientos, pausar, repetir la guía, realizar una pregunta contextual a Gemini y consultar el resumen. Durante la práctica, el micrófono escucha comandos aislados: «Pausar»/«Pausa», «Continuar»/«Reproducir», «Repetir», «Siguiente» y «Anterior». Para preguntar a Gemini sin tocar la pantalla, diga «Oye, …» o «Tengo una duda, …» seguido de la pregunta. También puede decir solo la activación y formular la duda en los diez segundos siguientes. Las demás conversaciones no se envían a Gemini. El indicador junto al título muestra si el micrófono está atento, reconectando o necesita permiso y permite apagarlo. La respuesta aparece en texto y se narra; al terminar, «Continuar» cierra el panel y reanuda la rutina. El botón «Preguntar a Gemini» y la entrada escrita siguen disponibles. Al reanudar, la narración comienza desde la primera frase del movimiento actual. La instrucción siempre está disponible como texto si el audio falla. Las sesiones anónimas sobreviven a una recarga mediante un identificador opaco guardado en `localStorage`.

@@ -4,6 +4,7 @@ import {
   type ContinuousMicStatus,
 } from '../../infrastructure/ai/ContinuousSpeechRecognition'
 import type { VoiceRecognitionTiming } from '../../application/voiceLatency'
+import { voiceCaptureController } from '../../app/services'
 
 export type VoiceListeningMode = 'continuous' | 'push-to-talk'
 
@@ -38,6 +39,7 @@ export function useContinuousVoiceControl(
         }
       },
       (text, timing) => onInterimRef.current?.(text, timing),
+      voiceCaptureController,
     )
     listenerRef.current = listener
     return () => {
