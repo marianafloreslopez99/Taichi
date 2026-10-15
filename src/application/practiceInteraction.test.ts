@@ -8,14 +8,13 @@ import {
 } from './practiceInteraction'
 
 describe('catalog and routine introductions', () => {
-  it('welcomes the user before routine selection and introduces the available commands', () => {
+  it('keeps the catalog welcome limited to greeting and routine selection', () => {
     const welcome = catalogWelcome(new Date('2026-10-07T19:00:00Z'))
     expect(welcome.greeting).toBe('Buenas tardes')
     expect(welcome.text).toMatch(/^Buenas tardes\./)
     expect(welcome.text).toContain(catalogSelection)
-    expect(welcome.text).toContain(
-      'Durante las rutinas podrás usar estos comandos',
-    )
+    expect(welcome.sections).toHaveLength(2)
+    expect(welcome.text).not.toContain('comandos')
     expect(welcome.text).not.toContain('Hoy vamos a realizar')
   })
 

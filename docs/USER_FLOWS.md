@@ -35,7 +35,11 @@ El usuario dice «Oye» o «Tengo una duda» seguido de su pregunta; el navegado
 
 ## Otros recorridos
 
-El selector «Modo de voz» permite elegir escucha continua o «Pulsar para hablar». En este último modo, el micrófono solo escucha tras pulsar el botón, se cierra tras una frase y no se reconecta automáticamente. «Terminar escucha» solicita la transcripción final antes de cerrar. La confirmación de finalizar y la respuesta de IA ofrecen el mismo botón para responder o decir «Continuar».
+La bienvenida solo saluda e invita a elegir una rutina. La primera práctica presenta los comandos esenciales y los dos modos del micrófono. Los demás consejos aparecen al avanzar, pausar, llegar al último movimiento o activar Pulsar para hablar. Cada explicación se puede omitir y se recuerda entre visitas en el mismo navegador.
+
+«Ayuda» o «Necesito ayuda» abre el diálogo y responde «¿En qué te puedo ayudar?». «Cuáles eran los comandos» muestra la lista por temas y da una orientación breve. El usuario elige qué tema escuchar; puede detenerlo o solicitar la lista completa. El botón «Ayuda» junto al micrófono abre este diálogo; dentro se muestra el modo activo y se puede cambiar. La guía del movimiento espera durante la consulta. «Continuar» permite volver a la práctica; cerrar la ayuda recupera el estado anterior.
+
+La práctica inicia en escucha continua. «Aplica el modo Pulsar para hablar» cambia el modo y confirma la acción en texto y voz. En ese modo el icono del micrófono inicia una captura; una segunda pulsación solicita la transcripción final. Tras cada frase vuelve a esperar otra pulsación. Para regresar, el usuario pulsa el icono y dice «Cambia a escucha continua» o «Activa escucha continua». El diálogo de ayuda también permite cambiar entre los dos modos con un botón. La confirmación de finalizar y la respuesta de IA ofrecen controles para responder o decir «Continuar» en el modo elegido.
 
 Una transcripción provisional exacta de «Pausar» detiene el audio y muestra «Confirmando…», sin cambiar todavía la sesión. La transcripción definitiva ejecuta la pausa una sola vez. Si cambia la frase o pasan cuatro segundos sin confirmación, la guía retoma la frase que estaba narrando. Mientras el servidor aplica un comando se muestra «Aplicando…» y se impiden comandos simultáneos. Si falla la pausa, la guía se recupera y aparece un aviso. Los resultados provisionales nunca finalizan la práctica.
 

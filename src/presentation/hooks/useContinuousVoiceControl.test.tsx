@@ -17,6 +17,27 @@ afterEach(() => {
   Recognition.instances = []
 })
 
+it('restarts recognition when the currently selected continuous mode is applied again', () => {
+  vi.stubGlobal('SpeechRecognition', Recognition)
+  const { result, rerender, unmount } = renderHook(
+    ({ active }) => useContinuousVoiceControl(active, vi.fn()),
+    { initialProps: { active: true } },
+  )
+  const first = Recognition.instances[0]!
+  act(() => result.current.setMode('continuous'))
+  expect(first.abort).toHaveBeenCalledOnce()
+  expect(Recognition.instances).toHaveLength(2)
+  expect(result.current.status).toBe('listening')
+  rerender({ active: false })
+  act(() => result.current.setMode('continuous'))
+  expect(result.current.status).toBe('suspended')
+  expect(Recognition.instances).toHaveLength(2)
+  rerender({ active: true })
+  expect(result.current.status).toBe('listening')
+  expect(Recognition.instances).toHaveLength(3)
+  unmount()
+})
+
 it('never reopens push-to-talk after suspension or re-enabling until the user presses again', () => {
   vi.stubGlobal('SpeechRecognition', Recognition)
   const { result, rerender, unmount } = renderHook(

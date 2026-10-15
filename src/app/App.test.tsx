@@ -1,4 +1,4 @@
-import { act, cleanup, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { screen, waitFor, within } from '@testing-library/dom'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -10,10 +10,15 @@ import {
   catalogWelcome,
   routineIntroduction,
   voiceCommandSections,
+  commandListIntroduction,
+  voiceHelpTopics,
+  practiceGuidance,
+  guidanceStorageKey,
 } from '../application/practiceInteraction'
 import { finishConfirmationPrompt } from '../presentation/components/FinishConfirmation'
 import { queryClient } from './queryClient'
 import { getVoiceLatencySamples } from '../application/voiceLatency'
+import { flattenRoutineMovements } from '../domain/routines'
 
 class FakeContinuousRecognition {
   static current: FakeContinuousRecognition
@@ -81,14 +86,24 @@ afterEach(() => {
 
 async function startVoicePractice(
   transition?: (action: string) => Promise<Response | undefined>,
+  initial: {
+    status?: 'PLAYING' | 'PAUSED'
+    movementIndex?: number
+    guidance?: 'new'
+  } = {},
 ) {
+  if (initial.guidance !== 'new')
+    window.localStorage.setItem(
+      guidanceStorageKey,
+      JSON.stringify(Object.keys(practiceGuidance)),
+    )
   window.history.pushState({}, '', '/')
   vi.stubGlobal('SpeechRecognition', FakeContinuousRecognition)
   let session: PracticeSession = {
     id: '00000000-0000-4000-8000-000000000009',
     routineId: routines[0]!.id,
-    currentMovementIndex: 0,
-    status: 'PLAYING',
+    currentMovementIndex: initial.movementIndex ?? 0,
+    status: initial.status ?? 'PLAYING',
     startedAt: Date.now(),
     completedAt: null,
     elapsedSeconds: 0,
@@ -140,6 +155,437 @@ async function startVoicePractice(
 }
 
 describe('practice journey', () => {
+  it('introduces essential controls and both modes once, then teaches navigation, questions and finishing in context', async () => {
+    const { speak } = await startVoicePractice(undefined, { guidance: 'new' })
+    expect(speak).toHaveBeenCalledWith(practiceGuidance.essentials.text)
+    for (const id of [
+      'navigation',
+      'questions',
+      'finish',
+      'push-to-talk',
+    ] as const)
+      expect(speak).not.toHaveBeenCalledWith(practiceGuidance[id].text)
+    say('Siguiente')
+    await screen.findByRole('heading', {
+      name: 'Acariciar la Crin del Caballo',
+    })
+    await screen.findByText('Micrófono atento')
+    expect(speak).toHaveBeenCalledWith(practiceGuidance.navigation.text)
+    expect(speak).not.toHaveBeenCalledWith(practiceGuidance.questions.text)
+    say('Pausar')
+    await screen.findByText('En pausa')
+    await screen.findByText('Micrófono atento')
+    expect(speak).toHaveBeenCalledWith(practiceGuidance.questions.text)
+    say('Continuar')
+    await screen.findByText('En movimiento')
+    await screen.findByText('Micrófono atento')
+    say('Siguiente')
+    await screen.findByRole('heading', {
+      name: 'Grulla Blanca Extiende las Alas',
+    })
+    await screen.findByText('Micrófono atento')
+    expect(speak).toHaveBeenCalledWith(practiceGuidance.finish.text)
+    for (const id of [
+      'essentials',
+      'navigation',
+      'questions',
+      'finish',
+    ] as const)
+      expect(
+        speak.mock.calls.filter(([text]) => text === practiceGuidance[id].text),
+      ).toHaveLength(1)
+  })
+
+  it('opens help from the microphone container and narrates only a requested topic', async () => {
+    const { user, speak } = await startVoicePractice()
+    const beforeHelp = speak.mock.calls.length
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Ayuda',
+      }),
+    )
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Ayuda para tu práctica',
+    })
+    await waitFor(() =>
+      expect(
+        within(dialog).getByRole('button', { name: 'Continuar práctica' }),
+      ).toBeEnabled(),
+    )
+    expect(speak.mock.calls.slice(beforeHelp).map(([text]) => text)).toEqual([
+      '¿En qué te puedo ayudar?',
+    ])
+    const beforeModes = speak.mock.calls.length
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: 'Escuchar: Modos del micrófono',
+      }),
+    )
+    await waitFor(() =>
+      expect(
+        within(dialog).getByRole('button', { name: 'Continuar práctica' }),
+      ).toBeEnabled(),
+    )
+    expect(speak.mock.calls.slice(beforeModes).map(([text]) => text)).toEqual(
+      voiceHelpTopics.find((topic) => topic.id === 'modes')!.sections,
+    )
+    const beforeQuestions = speak.mock.calls.length
+    let finishQuestionHelp: () => void = () => {}
+    speak.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishQuestionHelp = resolve
+        }),
+    )
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Escuchar: Preguntas a IA' }),
+    )
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Detener explicación' }),
+    )
+    await waitFor(() =>
+      expect(
+        within(dialog).getByRole('button', { name: 'Continuar práctica' }),
+      ).toBeEnabled(),
+    )
+    expect(
+      speak.mock.calls.slice(beforeQuestions).map(([text]) => text),
+    ).toEqual(
+      voiceHelpTopics.find((topic) => topic.id === 'questions')!.sections,
+    )
+    await act(async () => finishQuestionHelp())
+    expect(speak.mock.calls.slice(beforeQuestions)).toHaveLength(1)
+  })
+
+  it('explains push-to-talk on first activation and lets the user skip the explanation', async () => {
+    const { user, speak } = await startVoicePractice(undefined, {
+      guidance: 'new',
+    })
+    speak.mockImplementation((text) =>
+      text === practiceGuidance['push-to-talk'].text
+        ? new Promise<void>(() => {})
+        : Promise.resolve(),
+    )
+    say('Pulsar para hablar')
+    const voiceConsole = screen.getByRole('region', {
+      name: 'Estado del control por voz',
+    })
+    await within(voiceConsole).findByText(practiceGuidance['push-to-talk'].text)
+    await user.click(
+      within(voiceConsole).getByRole('button', { name: 'Omitir explicación' }),
+    )
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Pulsar para hablar' }),
+      ).toBeEnabled(),
+    )
+    expect(
+      screen.getByRole('button', {
+        name: 'Ayuda',
+      }),
+    ).toBeEnabled()
+    expect(
+      JSON.parse(window.localStorage.getItem(guidanceStorageKey)!),
+    ).toContain('push-to-talk')
+    expect(
+      screen.queryByRole('button', { name: 'Omitir explicación' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('opens spoken help, lists commands, and changes the microphone to push-to-talk by voice', async () => {
+    const { user, speak, transitions } = await startVoicePractice()
+    const ask = vi.spyOn(voiceServices.ai, 'ask')
+    let finishGreeting: () => void = () => {}
+    speak.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishGreeting = resolve
+        }),
+    )
+    say('Necesito ayuda')
+    let dialog = await screen.findByRole('dialog', {
+      name: 'Ayuda para tu práctica',
+    })
+    expect(
+      within(dialog).getByText('¿En qué te puedo ayudar?'),
+    ).toBeInTheDocument()
+    await waitFor(() =>
+      expect(speak).toHaveBeenLastCalledWith('¿En qué te puedo ayudar?'),
+    )
+    say('Cuáles eran los comandos')
+    expect(
+      screen.getByRole('dialog', { name: 'Ayuda para tu práctica' }),
+    ).toBeInTheDocument()
+    await act(async () => finishGreeting())
+    await waitFor(() =>
+      expect(
+        within(dialog).getByRole('button', {
+          name: 'Cuáles eran los comandos',
+        }),
+      ).toBeEnabled(),
+    )
+    const beforeList = speak.mock.calls.length
+    say('Cuáles eran los comandos')
+    dialog = await screen.findByRole('dialog', {
+      name: 'Estos son tus comandos',
+    })
+    for (const text of voiceCommandSections)
+      expect(within(dialog).getByText(text)).toBeInTheDocument()
+    await waitFor(() =>
+      expect(
+        within(dialog).getByRole('button', {
+          name: 'Cuáles eran los comandos',
+        }),
+      ).toBeEnabled(),
+    )
+    expect(speak.mock.calls.slice(beforeList).map(([text]) => text)).toEqual([
+      commandListIntroduction,
+    ])
+    expect(ask).not.toHaveBeenCalled()
+    let finishMode: () => void = () => {}
+    speak.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishMode = resolve
+        }),
+    )
+    say('Aplica el modo Pulsar para hablar')
+    await within(dialog).findByText('Cambiemos a modo Pulsar para hablar.')
+    await waitFor(() =>
+      expect(speak).toHaveBeenLastCalledWith(
+        'Cambiemos a modo Pulsar para hablar.',
+      ),
+    )
+    expect(
+      within(dialog).getByRole('button', { name: 'Pulsar para hablar' }),
+    ).toBeDisabled()
+    await act(async () => finishMode())
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    const microphone = screen.getByRole('button', {
+      name: 'Pulsar para hablar',
+    })
+    expect(microphone).toBeEnabled()
+    const beforeTalk = FakeContinuousRecognition.instances.length
+    say('Siguiente')
+    expect(transitions).toHaveLength(0)
+    await user.click(microphone)
+    expect(FakeContinuousRecognition.current.continuous).toBe(false)
+    expect(FakeContinuousRecognition.instances).toHaveLength(beforeTalk + 1)
+    expect(
+      screen.getByRole('button', { name: 'Terminar escucha' }),
+    ).toBeInTheDocument()
+    say('Siguiente')
+    await screen.findByText('Pasemos al siguiente paso.')
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Pulsar para hablar' }),
+      ).toBeEnabled(),
+    )
+    expect(transitions).toEqual(['next'])
+    say('Siguiente')
+    expect(transitions).toEqual(['next'])
+    await user.click(screen.getByRole('button', { name: 'Pulsar para hablar' }))
+    sayInterim('Cambia a escucha continua')
+    await user.click(screen.getByRole('button', { name: 'Terminar escucha' }))
+    expect(FakeContinuousRecognition.current.stop).toHaveBeenCalledOnce()
+    say('Cambia a escucha continua')
+    await screen.findByText('Cambiemos a modo Escucha continua.')
+    await screen.findByText('Micrófono atento')
+    expect(
+      screen.getByRole('button', { name: 'Apagar micrófono' }),
+    ).toBeEnabled()
+  })
+
+  it('switches to continuous listening by voice inside push-to-talk help', async () => {
+    const { user, speak } = await startVoicePractice()
+    say('Pulsar para hablar')
+    await screen.findByText('Cambiemos a modo Pulsar para hablar.')
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Pulsar para hablar' }),
+      ).toBeEnabled(),
+    )
+    await user.click(screen.getByRole('button', { name: 'Pulsar para hablar' }))
+    say('Ayuda')
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Ayuda para tu práctica',
+    })
+    await waitFor(() =>
+      expect(
+        within(dialog).getByRole('button', { name: 'Pulsar para hablar' }),
+      ).toBeEnabled(),
+    )
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Pulsar para hablar' }),
+    )
+    say('Activa escucha continua')
+    await within(dialog).findByText('Cambiemos a modo Escucha continua.')
+    await screen.findByText('Micrófono atento')
+    expect(speak).toHaveBeenCalledWith('Cambiemos a modo Escucha continua.')
+    expect(FakeContinuousRecognition.current.continuous).toBe(true)
+    expect(
+      screen.getByRole('button', { name: 'Apagar micrófono' }),
+    ).toBeEnabled()
+    expect(
+      screen.queryByRole('button', { name: 'Abrir ayuda' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Ver comandos' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(/para recordar los comandos/),
+    ).not.toBeInTheDocument()
+  })
+
+  it('allows changing voice mode from help while the command list is being read', async () => {
+    const { user, speak } = await startVoicePractice()
+    let finishList: () => void = () => {}
+    speak.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishList = resolve
+        }),
+    )
+    say('Cuáles eran los comandos')
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Estos son tus comandos',
+    })
+    const switchMode = within(dialog).getByRole('button', {
+      name: 'Usar Pulsar para hablar',
+    })
+    expect(switchMode).toBeEnabled()
+    await user.click(switchMode)
+    await screen.findByText('Cambiemos a modo Pulsar para hablar.')
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Pulsar para hablar' }),
+      ).toBeEnabled(),
+    )
+    const afterSwitch = speak.mock.calls.length
+    await act(async () => finishList())
+    expect(speak).toHaveBeenCalledTimes(afterSwitch)
+    await user.click(screen.getByRole('button', { name: 'Pulsar para hablar' }))
+    say('Ayuda')
+    const help = await screen.findByRole('dialog', {
+      name: 'Ayuda para tu práctica',
+    })
+    const continuous = within(help).getByRole('button', {
+      name: 'Usar escucha continua',
+    })
+    await waitFor(() => expect(continuous).toBeEnabled())
+    await user.click(continuous)
+    await screen.findByText('Cambiemos a modo Escucha continua.')
+    await screen.findByText('Micrófono atento')
+    expect(FakeContinuousRecognition.current.continuous).toBe(true)
+  })
+
+  it('cancels help speech on close and still shows the command list when audio fails', async () => {
+    const { user, speak } = await startVoicePractice()
+    let finishGreeting: () => void = () => {}
+    speak.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishGreeting = resolve
+        }),
+    )
+    say('Ayuda')
+    await screen.findByRole('dialog', { name: 'Ayuda para tu práctica' })
+    await user.keyboard('{Escape}')
+    await screen.findByText('Micrófono atento')
+    const afterClose = speak.mock.calls.length
+    await act(async () => finishGreeting())
+    expect(speak).toHaveBeenCalledTimes(afterClose)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    speak.mockRejectedValueOnce(new Error('No audio'))
+    say('Cuáles eran los comandos')
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Estos son tus comandos',
+    })
+    await within(dialog).findByText(
+      'El audio de ayuda no está disponible. Puedes leer los comandos aquí.',
+    )
+    expect(within(dialog).getAllByRole('listitem')).toHaveLength(
+      voiceCommandSections.length,
+    )
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Cerrar ayuda' }),
+    )
+    await screen.findByText('Micrófono atento')
+  })
+
+  it.each([
+    ['Pausar', 'Tomemos un break.', 'PLAYING', 0, 'PAUSED', 0],
+    ['Continuar', 'Continuemos con la práctica.', 'PAUSED', 0, 'PLAYING', 0],
+    ['Repetir', 'Voy a repetir las instrucciones.', 'PLAYING', 0, 'PLAYING', 0],
+    ['Anterior', 'Regresemos al paso anterior.', 'PLAYING', 1, 'PLAYING', 0],
+    ['Siguiente', 'Pasemos al siguiente paso.', 'PLAYING', 0, 'PLAYING', 1],
+    ['Repetir', 'Voy a repetir las instrucciones.', 'PAUSED', 0, 'PAUSED', 0],
+  ] as const)(
+    'confirms %s in text and voice from %s, before narrating the next instructions',
+    async (
+      command,
+      confirmation,
+      status,
+      movementIndex,
+      expectedStatus,
+      expectedIndex,
+    ) => {
+      const { speak, transitions, getSession } = await startVoicePractice(
+        undefined,
+        { status, movementIndex },
+      )
+      let finishConfirmation: () => void = () => {}
+      speak.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            finishConfirmation = resolve
+          }),
+      )
+      const beforeCommand = speak.mock.calls.length
+      say(command)
+      const voiceConsole = screen.getByRole('region', {
+        name: 'Estado del control por voz',
+      })
+      await within(voiceConsole).findByText(confirmation)
+      await waitFor(() => expect(speak).toHaveBeenLastCalledWith(confirmation))
+      expect(speak).toHaveBeenCalledTimes(beforeCommand + 1)
+      expect(getSession().status).toBe(expectedStatus)
+      expect(getSession().currentMovementIndex).toBe(expectedIndex)
+      const microphone = screen.getByRole('button', {
+        name: 'Apagar micrófono',
+      })
+      expect(microphone).toHaveClass('voice-microphone--speaking')
+      expect(microphone).toBeDisabled()
+      const beforeEcho = transitions.length
+      say('Siguiente')
+      expect(transitions).toHaveLength(beforeEcho)
+      await act(async () => finishConfirmation())
+      expect(microphone).not.toHaveClass('voice-microphone--speaking')
+      expect(within(voiceConsole).getByText(confirmation)).toBeInTheDocument()
+      if (command === 'Pausar') {
+        expect(speak).toHaveBeenCalledTimes(beforeCommand + 1)
+      } else {
+        const cue = flattenRoutineMovements(routines[0]!)[expectedIndex]!
+          .movement.voiceGuide[0]!.text
+        await waitFor(() => expect(speak).toHaveBeenLastCalledWith(cue))
+      }
+    },
+  )
+
+  it('retains the written confirmation and resumes listening when confirmation audio fails', async () => {
+    const { speak } = await startVoicePractice()
+    speak.mockRejectedValueOnce(new Error('Audio unavailable'))
+    say('Pausar')
+    await screen.findByText('Tomemos un break.')
+    await screen.findByText(
+      'No se pudo reproducir la confirmación de voz. Puedes leerla en pantalla.',
+    )
+    expect(screen.getByText('En pausa')).toBeInTheDocument()
+    await screen.findByText('Micrófono atento')
+  })
+
   it('stops provisional pause audio immediately, rolls back corrections, and executes the confirmed command once', async () => {
     let finishPause: () => void = () => {}
     const { speak, stop, transitions, getSession } = await startVoicePractice(
@@ -175,7 +621,11 @@ describe('practice journey', () => {
     expect(transitions).toHaveLength(0)
     sayInterim('Pausar')
     say('Pausar')
-    expect(screen.getByText('Detecté «Pausar». Aplicando…')).toBeInTheDocument()
+    expect(
+      within(
+        screen.getByRole('region', { name: 'Estado del control por voz' }),
+      ).getByText('Detecté «Pausar». Aplicando…'),
+    ).toBeInTheDocument()
     say('Pausar')
     say('Siguiente')
     expect(transitions).toEqual(['pause'])
@@ -196,7 +646,7 @@ describe('practice journey', () => {
       'control-button--active',
     )
     vi.useRealTimers()
-    expect(screen.getByText('«Pausar» realizado.')).toBeInTheDocument()
+    expect(screen.getByText('Tomemos un break.')).toBeInTheDocument()
     expect(getVoiceLatencySamples()).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ command: 'pause', phase: 'recognition' }),
@@ -236,6 +686,8 @@ describe('practice journey', () => {
     await screen.findByText(
       'No se pudo ejecutar el comando de voz. Inténtalo de nuevo.',
     )
+    expect(screen.queryByText('Tomemos un break.')).not.toBeInTheDocument()
+    expect(speak).not.toHaveBeenCalledWith('Tomemos un break.')
     expect(speak.mock.calls.length).toBeGreaterThan(beforeFailure)
     expect(screen.getByText('En movimiento')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Pausar' })).not.toHaveClass(
@@ -252,77 +704,76 @@ describe('practice journey', () => {
     )
   })
 
-  it('only listens after pressing in push-to-talk mode, preserves final results, and confirms finish in the dialog', async () => {
-    const { user, transitions, getSession } = await startVoicePractice()
-    const selector = screen.getByRole('combobox', { name: 'Modo de voz' })
-    await user.selectOptions(selector, 'push-to-talk')
-    expect(screen.getByText('Pulsa para hablar')).toBeInTheDocument()
-    const initialListeners = FakeContinuousRecognition.instances.length
+  it('uses a single microphone to toggle continuous listening and retry permission errors', async () => {
+    const { user, transitions } = await startVoicePractice()
+    expect(
+      screen.queryByRole('combobox', { name: 'Modo de voz' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Escuchar comandos' }),
+    ).not.toBeInTheDocument()
+    const microphone = screen.getByRole('button', { name: 'Apagar micrófono' })
+    expect(microphone).toHaveClass('voice-microphone--listening')
+    expect(microphone).toHaveAttribute('aria-pressed', 'true')
+    await user.click(microphone)
+    expect(screen.getByText('Micrófono apagado')).toBeInTheDocument()
     say('Siguiente')
     expect(transitions).toHaveLength(0)
-    await user.click(screen.getByRole('button', { name: 'Pulsar para hablar' }))
-    expect(FakeContinuousRecognition.current.continuous).toBe(false)
+    await user.click(screen.getByRole('button', { name: 'Activar micrófono' }))
     say('Siguiente')
     await screen.findByRole('heading', {
       name: 'Acariciar la Crin del Caballo',
     })
-    expect(screen.getByRole('button', { name: 'Siguiente' })).toHaveClass(
-      'control-button--active',
-    )
-    expect(FakeContinuousRecognition.instances).toHaveLength(
-      initialListeners + 1,
-    )
-    say('Siguiente')
+    await screen.findByText('Micrófono atento')
     expect(transitions).toEqual(['next'])
-    await user.click(screen.getByRole('button', { name: 'Pulsar para hablar' }))
-    sayInterim('Pausar')
-    await user.click(screen.getByRole('button', { name: 'Terminar escucha' }))
-    expect(FakeContinuousRecognition.current.stop).toHaveBeenCalledOnce()
-    say('Pausar')
-    await screen.findByText('En pausa')
-    await user.click(screen.getByRole('button', { name: 'Pulsar para hablar' }))
-    say('Continuar')
-    await screen.findByText('En movimiento')
-    expect(screen.getByRole('button', { name: 'Pausar' })).toHaveClass(
-      'control-button--active',
-    )
-    await user.click(screen.getByRole('button', { name: 'Pulsar para hablar' }))
-    sayInterim('Finalizar')
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    say('Finalizar')
-    let dialog = await screen.findByRole('dialog', {
-      name: '¿Quieres finalizar la práctica?',
-    })
-    await within(dialog).findByText('Puedes usar los botones para responder.')
-    say('Sí, finalizar')
-    expect(getSession().status).toBe('PLAYING')
-    await user.click(
-      within(dialog).getByRole('button', { name: 'Pulsar para hablar' }),
-    )
-    say('Cancelar')
-    await waitFor(() =>
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
-    )
-    await user.click(screen.getByRole('button', { name: 'Pulsar para hablar' }))
-    say('Finalizar')
-    dialog = await screen.findByRole('dialog', {
-      name: '¿Quieres finalizar la práctica?',
-    })
-    await waitFor(() =>
-      expect(
-        within(dialog).getByRole('button', { name: 'Pulsar para hablar' }),
-      ).toBeEnabled(),
+    act(() =>
+      FakeContinuousRecognition.current.onerror?.({ error: 'not-allowed' }),
     )
     await user.click(
-      within(dialog).getByRole('button', { name: 'Pulsar para hablar' }),
+      screen.getByRole('button', { name: 'Reintentar micrófono' }),
     )
-    sayInterim('Sí, finalizar')
-    expect(getSession().status).toBe('PLAYING')
-    say('Sí, finalizar')
-    await waitFor(() => expect(window.location.pathname).toBe('/resumen'))
-    expect(transitions).toEqual(['next', 'pause', 'resume', 'complete'])
+    await screen.findByText('Micrófono atento')
   })
 
+  it('lights the microphone while IA speaks, progressively shows the answer, and completes it when audio ends', async () => {
+    const { speak } = await startVoicePractice()
+    const answer = 'Abre los brazos al inhalar, sin forzar el ritmo.'
+    vi.spyOn(voiceServices.stt, 'listen').mockResolvedValue('¿Cómo respiro?')
+    vi.spyOn(voiceServices.ai, 'ask').mockResolvedValue({ text: answer })
+    let finishAnswer: () => void = () => {}
+    speak.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishAnswer = resolve
+        }),
+    )
+    vi.useFakeTimers()
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Preguntar a IA/i }))
+    })
+    const dialog = screen.getByRole('dialog')
+    const microphone = within(dialog).getByRole('img', {
+      name: 'IA respondiendo',
+    })
+    expect(microphone).toHaveClass('voice-microphone--speaking')
+    const response = dialog.querySelector('.voice-response')!
+    expect(response.querySelector('[aria-hidden="true"]')).toHaveTextContent(
+      /^Abre$/,
+    )
+    await act(async () => vi.advanceTimersByTime(480))
+    expect(response.querySelector('[aria-hidden="true"]')).toHaveTextContent(
+      /^Abre los brazos$/,
+    )
+    await act(async () => finishAnswer())
+    expect(response.querySelector('[aria-hidden="true"]')).toHaveTextContent(
+      answer,
+    )
+    expect(dialog.querySelector('.voice-microphone--speaking')).toBeNull()
+    expect(
+      within(dialog).getByRole('button', { name: /Continuar rutina/i }),
+    ).toBeEnabled()
+    vi.useRealTimers()
+  })
   it('welcomes, explains commands, controls the routine and asks IA hands-free', async () => {
     window.history.pushState({}, '', '/')
     vi.stubGlobal('SpeechRecognition', FakeContinuousRecognition)
@@ -406,6 +857,10 @@ describe('practice journey', () => {
       .mockResolvedValue('¿Cómo coordino la respiración?')
     vi.spyOn(voiceServices.stt, 'stop').mockImplementation(() => {})
     const user = userEvent.setup()
+    window.localStorage.setItem(
+      guidanceStorageKey,
+      JSON.stringify(Object.keys(practiceGuidance)),
+    )
     render(<App />)
 
     const welcomeGuide = await screen.findByRole('region', {
@@ -416,7 +871,6 @@ describe('practice journey', () => {
     await waitFor(() =>
       expect(speak.mock.calls.map(([text]) => text)).toEqual([
         ...welcome.sections,
-        ...voiceCommandSections,
       ]),
     )
     expect(
@@ -449,9 +903,9 @@ describe('practice journey', () => {
         .some(([text]) => voiceCommandSections.includes(text)),
     ).toBe(false)
     expect(
-      screen.getByRole('button', { name: 'Escuchar comandos' }),
-    ).toBeInTheDocument()
-    expect(screen.getByText('Ver comandos')).toBeInTheDocument()
+      screen.queryByRole('button', { name: 'Escuchar comandos' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText('Ver comandos')).not.toBeInTheDocument()
     let finishHelp: () => void = () => {}
     speak.mockImplementationOnce(
       () =>
@@ -460,15 +914,24 @@ describe('practice journey', () => {
         }),
     )
     say('Puedes decirme qué acciones puedo realizar')
-    expect(
-      screen.getByRole('button', { name: 'Escuchar comandos' }),
-    ).toHaveClass('voice-console-toggle--active')
+
     expect(screen.getByText('Estos son tus comandos')).toBeInTheDocument()
-    expect(speak).toHaveBeenLastCalledWith(voiceCommandSections[0])
+    expect(speak).toHaveBeenLastCalledWith(commandListIntroduction)
     // The guide's spoken commands must not be recognized as user actions.
     say('Siguiente')
     expect(session.currentMovementIndex).toBe(0)
     await act(async () => finishHelp())
+    const helpDialog = screen.getByRole('dialog', {
+      name: 'Estos son tus comandos',
+    })
+    await waitFor(() =>
+      expect(
+        within(helpDialog).getByRole('button', { name: 'Continuar práctica' }),
+      ).toBeEnabled(),
+    )
+    await user.click(
+      within(helpDialog).getByRole('button', { name: 'Cerrar ayuda' }),
+    )
     await screen.findByText('Micrófono atento')
     expect(speak).toHaveBeenLastCalledWith(
       'Coloca los pies separados y adopta una postura cómoda.',
@@ -486,18 +949,25 @@ describe('practice journey', () => {
     await waitFor(() =>
       expect(screen.getByText('En pausa')).toBeInTheDocument(),
     )
+    await screen.findByText('Micrófono atento')
     const callsBeforePausedHelp = speak.mock.calls.length
     say('Oye, ¿qué acciones puedo realizar?')
-    await screen.findByText('Micrófono atento')
-    expect(speak).toHaveBeenCalledTimes(
-      callsBeforePausedHelp + voiceCommandSections.length,
+    const pausedHelp = await screen.findByRole('dialog', {
+      name: 'Estos son tus comandos',
+    })
+    await waitFor(() =>
+      expect(
+        within(pausedHelp).getByRole('button', { name: 'Continuar práctica' }),
+      ).toBeEnabled(),
     )
-    expect(speak).toHaveBeenLastCalledWith(voiceCommandSections.at(-1))
+    expect(speak).toHaveBeenCalledTimes(callsBeforePausedHelp + 1)
+    expect(speak).toHaveBeenLastCalledWith(commandListIntroduction)
     expect(session.status).toBe('PAUSED')
     say('Continuar')
     await waitFor(() =>
       expect(screen.getByText('En movimiento')).toBeInTheDocument(),
     )
+    await screen.findByText('Micrófono atento')
     const stopsBeforeWake = stopNarration.mock.calls.length
     sayInterim('Oye, tengo una pregunta')
     expect(stopNarration.mock.calls.length).toBeGreaterThan(stopsBeforeWake)
@@ -516,7 +986,7 @@ describe('practice journey', () => {
       await within(dialog).findByText(/¿Cómo coordino la respiración\?/),
     ).toBeInTheDocument()
     expect(
-      await screen.findByText(
+      await within(dialog).findByText(
         'Abre los brazos al inhalar, sin forzar el ritmo.',
       ),
     ).toBeInTheDocument()
@@ -528,6 +998,8 @@ describe('practice journey', () => {
     await waitFor(() =>
       expect(screen.getByText('Micrófono atento')).toBeInTheDocument(),
     )
+    expect(screen.getByText('Continuemos con la práctica.')).toBeInTheDocument()
+    expect(speak).toHaveBeenCalledWith('Continuemos con la práctica.')
     const callsBeforeRepeat = speak.mock.calls.length
     say('Repetir')
     await waitFor(() =>
@@ -547,10 +1019,12 @@ describe('practice journey', () => {
         name: 'Acariciar la Crin del Caballo',
       }),
     ).toBeInTheDocument()
+    await screen.findByText('Micrófono atento')
     say('Anterior')
     expect(
       await screen.findByRole('heading', { name: 'Apertura' }),
     ).toBeInTheDocument()
+    await screen.findByText('Micrófono atento')
     say('Finalizar')
     await screen.findByRole('dialog', {
       name: '¿Quieres finalizar la práctica?',
@@ -569,6 +1043,7 @@ describe('practice journey', () => {
     await screen.findByRole('heading', {
       name: 'Acariciar la Crin del Caballo',
     })
+    await screen.findByText('Micrófono atento')
     let finishCancelledHelp: () => void = () => {}
     speak.mockImplementationOnce(
       () =>
@@ -578,10 +1053,12 @@ describe('practice journey', () => {
     )
     say('Repetir comandos')
     expect(screen.getByText('Estos son tus comandos')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Cerrar ayuda' }))
     await user.click(screen.getByRole('button', { name: 'Siguiente' }))
     await screen.findByRole('heading', {
       name: 'Grulla Blanca Extiende las Alas',
     })
+    await screen.findByText('Micrófono atento')
     const callsAfterMovementChange = speak.mock.calls.length
     await act(async () => finishCancelledHelp())
     expect(speak).toHaveBeenCalledTimes(callsAfterMovementChange)
@@ -617,6 +1094,10 @@ describe('practice journey', () => {
     }
     let completions = 0
     let completionAttempts = 0
+    window.localStorage.setItem(
+      guidanceStorageKey,
+      JSON.stringify(Object.keys(practiceGuidance)),
+    )
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
@@ -660,6 +1141,7 @@ describe('practice journey', () => {
     expect(completions).toBe(0)
     say('Pausar')
     await screen.findByText('En pausa')
+    await screen.findByText('Micrófono atento')
     say('Finalizar')
     await screen.findByText('Te escucho: «Sí, finalizar» o «Cancelar».')
     say('No')
@@ -669,6 +1151,7 @@ describe('practice journey', () => {
     expect(session.status).toBe('PAUSED')
     say('Continuar')
     await screen.findByText('En movimiento')
+    await screen.findByText('Micrófono atento')
     say('Finalizar')
     say('Sí, finalizar')
     expect(completions).toBe(0)

@@ -6,7 +6,6 @@ import { voiceServices } from '../../app/services'
 import {
   catalogWelcome,
   catalogSelection,
-  voiceCommandSections,
 } from '../../application/practiceInteraction'
 import { CatalogWelcome } from './CatalogWelcome'
 
@@ -16,7 +15,7 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-it('lets the user stop the catalog welcome and replay its separate command sections', async () => {
+it('lets the user stop and replay a short greeting without command explanations', async () => {
   let finishWelcome: () => void = () => {}
   const speak = vi
     .spyOn(voiceServices.tts, 'speak')
@@ -39,7 +38,6 @@ it('lets the user stop the catalog welcome and replay its separate command secti
   await waitFor(() =>
     expect(speak.mock.calls.slice(1).map(([text]) => text)).toEqual([
       ...catalogWelcome().sections,
-      ...voiceCommandSections,
     ]),
   )
 })
@@ -83,7 +81,6 @@ it('allows retrying the welcome after an audio failure', async () => {
   await waitFor(() =>
     expect(speak.mock.calls.slice(1).map(([text]) => text)).toEqual([
       ...catalogWelcome().sections,
-      ...voiceCommandSections,
     ]),
   )
   expect(
@@ -138,7 +135,7 @@ it('shows only the currently narrated section, then leaves the selection invitat
   const guide = screen.getByRole('region', {
     name: 'Bienvenida y comandos de voz',
   })
-  const sections = [...catalogWelcome().sections, ...voiceCommandSections]
+  const sections = catalogWelcome().sections
   for (const [index, text] of sections.entries()) {
     expect(within(guide).getAllByRole('status')).toHaveLength(1)
     expect(within(guide).getByRole('status')).toHaveTextContent(text)

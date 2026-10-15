@@ -3,7 +3,6 @@ import { voiceServices } from '../../app/services'
 import {
   catalogWelcome,
   catalogSelection,
-  voiceCommandSections,
 } from '../../application/practiceInteraction'
 import { playVoiceGuide } from '../../application/voiceGuide'
 import { Icon } from './Icon'
@@ -32,7 +31,7 @@ export function CatalogWelcome() {
     setWelcome(nextWelcome)
     void (async () => {
       await playVoiceGuide(
-        [...nextWelcome.sections, ...voiceCommandSections].map((text) => ({
+        nextWelcome.sections.map((text) => ({
           text,
           pauseAfterMs: 0,
         })),
