@@ -4,7 +4,10 @@ import {
   type ContinuousMicStatus,
 } from '../../infrastructure/ai/ContinuousSpeechRecognition'
 import type { VoiceRecognitionTiming } from '../../application/voiceLatency'
-import { voiceCaptureController } from '../../app/services'
+import {
+  voiceActivityDetector,
+  voiceCaptureController,
+} from '../../app/services'
 
 export type VoiceListeningMode = 'continuous' | 'push-to-talk'
 
@@ -12,6 +15,7 @@ export function useContinuousVoiceControl(
   active: boolean,
   onPhrase: (text: string, timing: VoiceRecognitionTiming) => void,
   onInterim?: (text: string, timing: VoiceRecognitionTiming) => void,
+  isEndpointCandidate?: (text: string) => boolean,
 ) {
   const [enabled, setEnabled] = useState(true)
   const [status, setStatus] = useState<ContinuousMicStatus>('off')
@@ -22,9 +26,11 @@ export function useContinuousVoiceControl(
   const [capturing, setCapturing] = useState(false)
   const onPhraseRef = useRef(onPhrase)
   const onInterimRef = useRef(onInterim)
+  const isEndpointCandidateRef = useRef(isEndpointCandidate)
   const listenerRef = useRef<ContinuousSpeechRecognition | null>(null)
   onPhraseRef.current = onPhrase
   onInterimRef.current = onInterim
+  isEndpointCandidateRef.current = isEndpointCandidate
 
   useEffect(() => {
     let mounted = true
@@ -41,13 +47,19 @@ export function useContinuousVoiceControl(
             setCapturing(false)
         }
       },
-      (text, timing) => onInterimRef.current?.(text, timing),
+      (text, timing) => {
+        if (isEndpointCandidateRef.current?.(text))
+          listenerRef.current?.armVadEndpoint()
+        onInterimRef.current?.(text, timing)
+      },
       voiceCaptureController,
+      voiceActivityDetector,
     )
     listenerRef.current = listener
     return () => {
       mounted = false
       listener.stop()
+      void voiceActivityDetector.destroy()
       listenerRef.current = null
     }
   }, [])

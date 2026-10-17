@@ -9,6 +9,10 @@ import {
   type VoiceIntervention,
 } from '../../application/voiceController'
 import { VOICE_FINALIZATION_TIMEOUT_MS } from '../../application/voiceConfig'
+import {
+  SileroVadAdapter,
+  type VoiceActivityDetector,
+} from './SileroVadAdapter'
 
 export type ContinuousMicStatus =
   | 'off'
@@ -61,6 +65,8 @@ export class ContinuousSpeechRecognition {
   private singleUtterance = false
   private utteranceTimer: number | null = null
   private capture: VoiceIntervention | null = null
+  private vadEndpointArmed = false
+  private vadSpeechEnded = false
 
   constructor(
     private readonly onPhrase: (
@@ -73,6 +79,7 @@ export class ContinuousSpeechRecognition {
       timing: VoiceRecognitionTiming,
     ) => void,
     private readonly controller = new VoiceController(),
+    private readonly vad: VoiceActivityDetector = new SileroVadAdapter(),
   ) {}
 
   start(singleUtterance = false): void {
@@ -107,6 +114,19 @@ export class ContinuousSpeechRecognition {
     } catch {
       this.finishTimeout()
     }
+  }
+
+  armVadEndpoint(): void {
+    if (this.vad.mode !== 'endpoint' || !this.active) return
+    this.vadEndpointArmed = true
+    if (this.vadSpeechEnded) this.finishFromVad()
+  }
+
+  private finishFromVad(): void {
+    if (!this.vadEndpointArmed || !this.active) return
+    this.vadEndpointArmed = false
+    this.recordEvent('vad-endpoint-requested')
+    this.finishUtterance()
   }
 
   private limitUtterance(delay: number): void {
@@ -145,6 +165,7 @@ export class ContinuousSpeechRecognition {
     abort: boolean,
     retainLease = false,
   ): void {
+    this.vad.stop(recognition)
     if (abort && this.active === recognition)
       this.recordEvent('cancel-requested')
     if (this.utteranceTimer !== null) {
@@ -239,6 +260,8 @@ export class ContinuousSpeechRecognition {
     }
     this.active = recognition
     this.capture = intervention
+    this.vadEndpointArmed = false
+    this.vadSpeechEnded = false
     const isCurrent = () =>
       this.active === recognition && this.controller.isCurrent(intervention)
     this.onStatus('starting')
@@ -265,6 +288,28 @@ export class ContinuousSpeechRecognition {
       speechEndedAt = performance.now()
       this.recordEvent('speech-ended')
     }
+    this.vad.start(recognition, 'command', {
+      onReady: () => {
+        if (isCurrent()) this.recordEvent('vad-ready')
+      },
+      onSpeechStart: () => {
+        if (!isCurrent()) return
+        this.vadSpeechEnded = false
+        this.recordEvent('vad-speech-started')
+      },
+      onSpeechEnd: () => {
+        if (!isCurrent()) return
+        this.vadSpeechEnded = true
+        this.recordEvent('vad-speech-ended')
+        if (this.vad.mode === 'endpoint') this.finishFromVad()
+      },
+      onMisfire: () => {
+        if (isCurrent()) this.recordEvent('vad-misfire')
+      },
+      onError: () => {
+        if (isCurrent()) this.recordEvent('vad-error')
+      },
+    })
     if (this.singleUtterance) this.limitUtterance(12_000)
 
     recognition.onstart = () => {
@@ -304,6 +349,8 @@ export class ContinuousSpeechRecognition {
         this.networkFailures = 0
         firstResults.delete(index)
         if (phrase) this.onPhrase(phrase, timing)
+        this.vadEndpointArmed = false
+        this.vadSpeechEnded = false
         speechEndedAt = undefined
         if (this.singleUtterance && this.active === recognition) this.wait()
       }

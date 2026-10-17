@@ -8,6 +8,27 @@ import {
   getVoiceEvaluation,
   startVoiceEvaluation,
 } from '../../application/voiceLatency'
+import type {
+  VoiceActivityCallbacks,
+  VoiceActivityDetector,
+} from './SileroVadAdapter'
+
+class FakeVad implements VoiceActivityDetector {
+  callbacks: VoiceActivityCallbacks | null = null
+  start = vi.fn(
+    (
+      _owner: object,
+      _profile: 'command' | 'question',
+      callbacks: VoiceActivityCallbacks,
+    ) => {
+      this.callbacks = callbacks
+    },
+  )
+  stop = vi.fn()
+  destroy = vi.fn(async () => undefined)
+
+  constructor(readonly mode: 'off' | 'observe' | 'endpoint') {}
+}
 
 class FakeRecognition {
   static instances: FakeRecognition[] = []
@@ -50,6 +71,45 @@ afterEach(() => {
 })
 
 describe('ContinuousSpeechRecognition', () => {
+  it('uses VAD silence to finish only an armed endpoint candidate', () => {
+    const vad = new FakeVad('endpoint')
+    const service = new ContinuousSpeechRecognition(
+      vi.fn(),
+      vi.fn(),
+      vi.fn(),
+      new VoiceController(),
+      vad,
+    )
+    service.start()
+    const recognition = FakeRecognition.instances[0]!
+    vad.callbacks?.onSpeechEnd()
+    expect(recognition.stop).not.toHaveBeenCalled()
+    service.armVadEndpoint()
+    expect(recognition.stop).toHaveBeenCalledOnce()
+    vad.callbacks?.onSpeechEnd()
+    expect(recognition.stop).toHaveBeenCalledOnce()
+    service.stop()
+    expect(vad.stop).toHaveBeenCalledWith(recognition)
+  })
+
+  it('records VAD in observe mode without changing native recognition', () => {
+    const vad = new FakeVad('observe')
+    const service = new ContinuousSpeechRecognition(
+      vi.fn(),
+      vi.fn(),
+      vi.fn(),
+      new VoiceController(),
+      vad,
+    )
+    service.start()
+    const recognition = FakeRecognition.instances[0]!
+    service.armVadEndpoint()
+    vad.callbacks?.onSpeechStart()
+    vad.callbacks?.onSpeechEnd()
+    expect(recognition.stop).not.toHaveBeenCalled()
+    service.stop()
+  })
+
   it('records native audio lifecycle and error reasons, and cleans replaced callbacks', () => {
     startVoiceEvaluation({
       browser: 'edge',

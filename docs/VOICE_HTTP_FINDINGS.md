@@ -35,4 +35,4 @@ El usuario confirmó el aviso «Gemini alcanzó temporalmente su límite de soli
 
 - Repetir el ensayo acústico con hasta 30 intentos separados; si vuelve a fallar, exportar inmediatamente antes de recargar o reiniciar el micrófono, indicando cuántos intentos se hicieron.
 - Consultar antes de cambiar ubicación/conexión de base de datos, reestructurar persistencia o introducir una interfaz optimista: la demora residual de actualizaciones sigue siendo significativa.
-- Mantener Silero pendiente hasta resolver estas decisiones y comprobar la recuperación de escucha real.
+- Mantener `endpoint` desactivado por defecto hasta comprobar recuperación, eco, precisión y consumo con escucha real; usar primero `observe` para la captura comparativa.

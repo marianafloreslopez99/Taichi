@@ -776,6 +776,10 @@ function PracticeExperience({
                 assistant.state.status === 'ERROR')))),
     handleVoicePhrase,
     handleInterimPhrase,
+    (text) =>
+      finishRequestedRef.current
+        ? parseFinishConfirmation(text) !== null
+        : parseVoiceIntent(text) !== null,
   )
 
   const requestFinish = (fromQueue = false) => {

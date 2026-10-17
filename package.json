@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && npm run voice:assets",
+    "predev": "npm run voice:assets",
     "dev": "vite",
     "dev:server": "tsx watch server/index.ts",
     "server": "tsx server/index.ts",
@@ -13,18 +14,22 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx server/seed.ts",
+    "prebuild": "npm run voice:assets",
     "build": "tsc -b && node scripts/build.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint .",
     "test": "vitest run",
-    "format": "prettier --write src docs README.md index.html package.json tsconfig*.json vite.config.ts eslint.config.js"
+    "format": "prettier --write src docs README.md index.html package.json tsconfig*.json vite.config.ts eslint.config.js",
+    "voice:assets": "node scripts/sync-voice-assets.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.24.0",
     "@prisma/client": "^6.19.0",
+    "@ricky0123/vad-web": "0.0.31",
     "@tanstack/react-query": "^5.103.2",
     "express": "^5.2.1",
+    "onnxruntime-web": "1.22.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router": "^8.4.0",

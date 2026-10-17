@@ -6,6 +6,27 @@ import {
   getVoiceEvaluation,
   startVoiceEvaluation,
 } from '../../application/voiceLatency'
+import { VoiceController } from '../../application/voiceController'
+import type {
+  VoiceActivityCallbacks,
+  VoiceActivityDetector,
+} from './SileroVadAdapter'
+
+class FakeVad implements VoiceActivityDetector {
+  readonly mode = 'endpoint'
+  callbacks: VoiceActivityCallbacks | null = null
+  start = vi.fn(
+    (
+      _owner: object,
+      _profile: 'command' | 'question',
+      callbacks: VoiceActivityCallbacks,
+    ) => {
+      this.callbacks = callbacks
+    },
+  )
+  stop = vi.fn()
+  destroy = vi.fn(async () => undefined)
+}
 
 class FakeRecognition {
   static current: FakeRecognition
@@ -37,6 +58,26 @@ afterEach(() => {
 })
 
 describe('BrowserSpeechToTextAdapter', () => {
+  it('asks native recognition for a final question when VAD detects silence', async () => {
+    vi.stubGlobal('SpeechRecognition', FakeRecognition)
+    const vad = new FakeVad()
+    const adapter = new BrowserSpeechToTextAdapter(new VoiceController(), vad)
+    const pending = adapter.listen()
+    const recognition = FakeRecognition.current
+    recognition.stop.mockImplementation(() => {})
+    recognition.onresult?.({
+      results: [{ isFinal: false, 0: { transcript: 'Cómo respiro' } }],
+    })
+    vad.callbacks?.onSpeechEnd()
+    expect(recognition.stop).toHaveBeenCalledOnce()
+    recognition.onresult?.({
+      results: [{ isFinal: true, 0: { transcript: '¿Cómo respiro?' } }],
+    })
+    recognition.onend?.()
+    await expect(pending).resolves.toBe('¿Cómo respiro?')
+    expect(vad.stop).toHaveBeenCalledWith(recognition)
+  })
+
   it('preserves a definitive question if the browser omits end after stop', async () => {
     vi.useFakeTimers()
     vi.stubGlobal('SpeechRecognition', FakeRecognition)

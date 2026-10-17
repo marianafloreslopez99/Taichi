@@ -2,7 +2,9 @@
 
 ```mermaid
 flowchart LR
-  M[Pregunta hablada] --> R[SpeechRecognition del navegador]
+  M[Pregunta hablada] --> V[Silero VAD local opcional]
+  M --> R[SpeechRecognition del navegador]
+  V --> R
   R --> Q[runQuestionFlow]
   E[Pregunta escrita] --> W[runTextQuestionFlow]
   W --> P
@@ -21,6 +23,6 @@ La clave se lee como `GEMINI_API_KEY`; por compatibilidad también se acepta la 
 
 Una respuesta 429 se presenta como un error recuperable. El servidor distingue entre un límite temporal (`AI_RATE_LIMITED`) y una cuota diaria agotada (`AI_DAILY_QUOTA_EXHAUSTED`), sin exponer detalles internos del proveedor. Las cuotas diarias de Gemini se aplican por proyecto y se reinician a medianoche, hora del Pacífico. Para usar otro modelo autorizado, cambie `GEMINI_MODEL` sin modificar código.
 
-Durante la práctica, `ContinuousSpeechRecognition` mantiene el reconocimiento del navegador activo y lo reinicia tras inactividad o errores de red. `parseVoiceIntent` acepta comandos aislados y solo deriva preguntas a Gemini si comienzan con «Oye» o «Tengo una duda»; una activación sin pregunta espera la siguiente frase durante diez segundos. Mientras Gemini procesa y narra, se suspende la escucha de comandos; al terminar la respuesta se reactiva solo para aceptar «Continuar». El botón de pregunta usa `BrowserSpeechToTextAdapter` para escuchar una sola duda; también se puede escribir. El audio puede procesarse en un servicio del navegador; la aplicación envía al backend solo el texto reconocido después de la activación. `BrowserTextToSpeechAdapter` usa `speechSynthesis` para leer la respuesta. Las preguntas y respuestas completadas se guardan juntas en MySQL mediante `POST /api/v1/sessions/:sessionId/questions`.
+Durante la práctica, `ContinuousSpeechRecognition` mantiene el reconocimiento del navegador activo y lo reinicia tras inactividad o errores de red. `parseVoiceIntent` acepta comandos aislados y solo deriva preguntas a Gemini si comienzan con «Oye» o «Tengo una duda»; una activación sin pregunta espera la siguiente frase durante diez segundos. Mientras Gemini procesa y narra, se suspende la escucha de comandos; al terminar la respuesta se reactiva solo para aceptar «Continuar». El botón de pregunta usa `BrowserSpeechToTextAdapter` para escuchar una sola duda; también se puede escribir. Silero VAD v6 puede observar o solicitar el cierre del STT después del silencio, pero no transcribe, interpreta ni envía audio. El runtime y modelo se cargan desde el mismo origen solo al habilitar el experimento. El audio puede procesarse en servicios del navegador; la aplicación envía al backend solo el texto definitivo reconocido después de la activación. `BrowserTextToSpeechAdapter` usa `speechSynthesis` para leer la respuesta. Las preguntas y respuestas completadas se guardan juntas en MySQL mediante `POST /api/v1/sessions/:sessionId/questions`.
 
 El prompt del servidor limita la respuesta a orientación educativa breve, rechaza cambios de instrucciones y evita diagnósticos. Las preguntas de salud activan un aviso profesional. El flujo conserva la respuesta escrita si TTS falla; un fallo del LLM es recuperable y no destruye la sesión. `AbortController` y `stop()` cancelan solicitudes o narraciones al cerrar el panel.

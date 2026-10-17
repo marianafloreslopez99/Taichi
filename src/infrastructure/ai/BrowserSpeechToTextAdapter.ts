@@ -9,6 +9,10 @@ import {
   type VoiceIntervention,
 } from '../../application/voiceController'
 import { VOICE_FINALIZATION_TIMEOUT_MS } from '../../application/voiceConfig'
+import {
+  SileroVadAdapter,
+  type VoiceActivityDetector,
+} from './SileroVadAdapter'
 
 interface RecognitionResult {
   isFinal: boolean
@@ -42,7 +46,10 @@ export class BrowserSpeechToTextAdapter implements SpeechToTextService {
   private active: Recognition | null = null
   private cancelActive: (() => void) | null = null
 
-  constructor(private readonly controller = new VoiceController()) {}
+  constructor(
+    private readonly controller = new VoiceController(),
+    private readonly vad: VoiceActivityDetector = new SileroVadAdapter(),
+  ) {}
 
   listen(
     signal?: AbortSignal,
@@ -90,6 +97,7 @@ export class BrowserSpeechToTextAdapter implements SpeechToTextService {
       const finish = (error?: Error) => {
         if (settled) return
         settled = true
+        this.vad.stop(recognition)
         if (finalizationTimer !== null) window.clearTimeout(finalizationTimer)
         signal?.removeEventListener('abort', cancel)
         recognition.onresult = null
@@ -121,6 +129,38 @@ export class BrowserSpeechToTextAdapter implements SpeechToTextService {
       signal?.addEventListener('abort', cancel, { once: true })
       const isCurrent = () =>
         !settled && this.controller.isCurrent(intervention)
+      const requestFinish = (source: 'result' | 'vad') => {
+        if (!this.controller.requestFinish(intervention)) return false
+        if (source === 'vad') recordEvent('vad-endpoint-requested')
+        recordEvent('finish-requested')
+        finalizationTimer = window.setTimeout(() => {
+          if (!isCurrent()) return
+          recordEvent('finalization-timeout')
+          // Preserve a final transcript if one arrived. Silence alone never
+          // promotes an interim transcript into a question.
+          finish()
+          try {
+            recognition.abort()
+          } catch {
+            /* Already disconnected. */
+          }
+        }, VOICE_FINALIZATION_TIMEOUT_MS)
+        try {
+          recognition.stop()
+        } catch (error) {
+          finish(
+            error instanceof Error
+              ? error
+              : new Error('No se pudo finalizar el micrófono.'),
+          )
+          try {
+            recognition.abort()
+          } catch {
+            /* Already disconnected. */
+          }
+        }
+        return true
+      }
       recognition.onstart = () => {
         if (isCurrent()) recordEvent('started')
       }
@@ -150,35 +190,7 @@ export class BrowserSpeechToTextAdapter implements SpeechToTextService {
         }
         finalText = completed.trim()
         onInterim?.(`${completed}${interim}`.trim())
-        if (finalText && this.controller.requestFinish(intervention)) {
-          recordEvent('finish-requested')
-          finalizationTimer = window.setTimeout(() => {
-            if (!isCurrent()) return
-            recordEvent('finalization-timeout')
-            // A definitive transcript is already available. Release the browser
-            // even if it fails to deliver end, without submitting an interim.
-            finish()
-            try {
-              recognition.abort()
-            } catch {
-              /* Already disconnected. */
-            }
-          }, VOICE_FINALIZATION_TIMEOUT_MS)
-          try {
-            recognition.stop()
-          } catch (error) {
-            finish(
-              error instanceof Error
-                ? error
-                : new Error('No se pudo finalizar el micrófono.'),
-            )
-            try {
-              recognition.abort()
-            } catch {
-              /* Already disconnected. */
-            }
-          }
-        }
+        if (finalText) requestFinish('result')
       }
       recognition.onerror = (event) => {
         if (!isCurrent()) return
@@ -202,6 +214,25 @@ export class BrowserSpeechToTextAdapter implements SpeechToTextService {
       }
       try {
         intervention = this.controller.begin(captureId, 'question', cancel)
+        this.vad.start(recognition, 'question', {
+          onReady: () => {
+            if (isCurrent()) recordEvent('vad-ready')
+          },
+          onSpeechStart: () => {
+            if (isCurrent()) recordEvent('vad-speech-started')
+          },
+          onSpeechEnd: () => {
+            if (!isCurrent()) return
+            recordEvent('vad-speech-ended')
+            if (this.vad.mode === 'endpoint') requestFinish('vad')
+          },
+          onMisfire: () => {
+            if (isCurrent()) recordEvent('vad-misfire')
+          },
+          onError: () => {
+            if (isCurrent()) recordEvent('vad-error')
+          },
+        })
         recordEvent('start-requested')
         recognition.start()
       } catch (error) {
