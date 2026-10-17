@@ -6,30 +6,50 @@ const MAX_PENDING_COMMANDS = 10
 export function useCommandQueue<T>(
   execute: (item: T, signal: AbortSignal) => Promise<void>,
   onFailure: (item: T, error: unknown) => void,
+  onPendingChange?: (pending: boolean) => void,
 ) {
   const waiting = useRef<T[]>([])
   const active = useRef<AbortController | null>(null)
   const pendingRef = useRef(false)
+  const onPendingChangeRef = useRef(onPendingChange)
+  onPendingChangeRef.current = onPendingChange
   const [revision, wake] = useReducer((value: number) => value + 1, 0)
 
-  const enqueue = useCallback((item: T, urgent = false) => {
-    if (
-      waiting.current.length + Number(active.current !== null) >=
-      MAX_PENDING_COMMANDS + Number(urgent)
-    )
-      return false
-    waiting.current.push(item)
-    pendingRef.current = true
-    wake()
-    return true
+  const setPending = useCallback((pending: boolean) => {
+    pendingRef.current = pending
+    onPendingChangeRef.current?.(pending)
   }, [])
+
+  const enqueue = useCallback(
+    (item: T, urgent = false) => {
+      if (
+        waiting.current.length + Number(active.current !== null) >=
+        MAX_PENDING_COMMANDS + Number(urgent)
+      )
+        return false
+      waiting.current.push(item)
+      setPending(true)
+      wake()
+      return true
+    },
+    [setPending],
+  )
 
   const clearWaiting = useCallback(() => {
     const removed = waiting.current.splice(0)
-    pendingRef.current = active.current !== null
+    setPending(active.current !== null)
     wake()
     return removed
-  }, [])
+  }, [setPending])
+
+  const cancelAll = useCallback(() => {
+    const removed = waiting.current.splice(0)
+    active.current?.abort()
+    active.current = null
+    setPending(false)
+    wake()
+    return removed
+  }, [setPending])
 
   useEffect(() => {
     if (active.current || waiting.current.length === 0) return
@@ -44,12 +64,12 @@ export function useCommandQueue<T>(
       } finally {
         if (!controller.signal.aborted) {
           active.current = null
-          pendingRef.current = waiting.current.length > 0
+          setPending(waiting.current.length > 0)
           wake()
         }
       }
     })()
-  }, [execute, onFailure, revision])
+  }, [execute, onFailure, revision, setPending])
 
   useEffect(
     () => () => {
@@ -61,5 +81,5 @@ export function useCommandQueue<T>(
     [],
   )
 
-  return { enqueue, clearWaiting, pendingRef }
+  return { enqueue, clearWaiting, cancelAll, pendingRef }
 }

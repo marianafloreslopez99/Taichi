@@ -20,8 +20,9 @@
 ## Navegación e instrucciones
 
 - **BR-007** Repetir reproduce la instrucción actual sin cambiar el movimiento.
-- **BR-032** Pausar cancela la guía; reanudar comienza desde la primera frase del mismo movimiento.
+- **BR-032** Pausar conserva la instrucción actual de la guía durante la práctica. Continuar vuelve a narrar completa esa instrucción y después sigue con las siguientes. Repetir reinicia todas las instrucciones del movimiento.
 - **BR-033** Cambiar de movimiento, preguntar o salir cancela voz y pausas pendientes.
+- **BR-039** En reproducción se avanza automáticamente al terminar la guía y los consejos pendientes del movimiento. Pausa, pregunta o ayuda detienen ese avance; las esperas entre instrucciones son de hasta 1.5 segundos. El último movimiento solicita confirmación para finalizar. Un fallo de avance no se reintenta automáticamente.
 - **BR-008** Se puede regresar mientras la sesión está activa o pausada.
 - **BR-009** No se puede navegar más allá del último movimiento; el botón final se convierte en “Finalizar práctica” y solicita confirmación.
 - **BR-024** El primer movimiento no tiene anterior.

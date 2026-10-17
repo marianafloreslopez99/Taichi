@@ -15,7 +15,10 @@ export function useContinuousVoiceControl(
 ) {
   const [enabled, setEnabled] = useState(true)
   const [status, setStatus] = useState<ContinuousMicStatus>('off')
-  const [mode, setMode] = useState<VoiceListeningMode>('continuous')
+  const [modeRequest, setModeRequest] = useState<{ mode: VoiceListeningMode }>({
+    mode: 'continuous',
+  })
+  const { mode } = modeRequest
   const [capturing, setCapturing] = useState(false)
   const onPhraseRef = useRef(onPhrase)
   const onInterimRef = useRef(onInterim)
@@ -56,7 +59,7 @@ export function useContinuousVoiceControl(
     else if (!active) listener.suspend()
     else if (mode === 'push-to-talk' && !capturing) listener.wait()
     else listener.start(mode === 'push-to-talk')
-  }, [active, enabled, mode, capturing])
+  }, [active, enabled, mode, modeRequest, capturing])
 
   return {
     status,
@@ -68,7 +71,7 @@ export function useContinuousVoiceControl(
     setMode: (nextMode: VoiceListeningMode) => {
       listenerRef.current?.suspend()
       setCapturing(false)
-      setMode(nextMode)
+      setModeRequest({ mode: nextMode })
     },
     talk: () => {
       if (!active || !enabled || mode !== 'push-to-talk') return
@@ -92,6 +95,13 @@ export function useContinuousVoiceControl(
     suspendNow: () => {
       listenerRef.current?.suspend()
       setCapturing(false)
+    },
+    resumeNow: (nextMode: VoiceListeningMode = mode) => {
+      if (!enabled) return
+      if (nextMode === 'push-to-talk') {
+        listenerRef.current?.wait()
+        setCapturing(false)
+      } else listenerRef.current?.start()
     },
   }
 }

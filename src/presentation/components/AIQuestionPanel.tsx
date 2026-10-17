@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { AIInteractionStatus } from '../../application/questionFlow'
 import { Icon } from './Icon'
 import { VoiceTalkButton, type VoiceTalkControl } from './VoiceTalkButton'
+import { VoiceMicrophone } from './VoiceMicrophone'
+import { ProgressiveResponse } from './ProgressiveResponse'
 
 interface Props {
   status: AIInteractionStatus
@@ -116,8 +118,14 @@ export function AIQuestionPanel({
         <div className="ai-guide-paused" role="status">
           <Icon name="pause" /> La guía está en pausa mientras preguntas
         </div>
-        <div className={`ai-orb ${processing ? 'ai-orb--active' : ''}`}>
-          <Icon name="spark" />
+        <div className="ai-microphone">
+          <VoiceMicrophone
+            speaking={status === 'SPEAKING'}
+            listening={status === 'LISTENING'}
+            label={
+              status === 'SPEAKING' ? 'IA respondiendo' : statusText[status]
+            }
+          />
         </div>
         <p className="eyebrow ai-step">PREGUNTA SOBRE ESTE MOVIMIENTO</p>
         <h2 id="ai-title" aria-live="polite">
@@ -202,7 +210,10 @@ export function AIQuestionPanel({
         {answer && (
           <div className="qa-block qa-block--answer">
             <span>Orientación</span>
-            <p>{answer}</p>
+            <ProgressiveResponse
+              text={answer}
+              speaking={status === 'SPEAKING'}
+            />
           </div>
         )}
         {requiresProfessionalAdvice && (

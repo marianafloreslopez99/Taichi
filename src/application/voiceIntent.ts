@@ -1,5 +1,14 @@
 export type VoiceCommand =
-  'pause' | 'resume' | 'repeat' | 'next' | 'previous' | 'finish' | 'help'
+  | 'pause'
+  | 'resume'
+  | 'repeat'
+  | 'next'
+  | 'previous'
+  | 'finish'
+  | 'help'
+  | 'commands'
+  | 'push-to-talk'
+  | 'continuous'
 
 export type VoiceIntent =
   | { type: 'command'; command: VoiceCommand }
@@ -20,14 +29,16 @@ const commands: Record<string, VoiceCommand> = {
   finalizar: 'finish',
   'finalizar rutina': 'finish',
   'finalizar practica': 'finish',
-  'que acciones puedo realizar': 'help',
-  'puedes decirme que acciones puedo realizar': 'help',
-  'dime que acciones puedo realizar': 'help',
-  'que comandos puedo usar': 'help',
-  'cuales son los comandos': 'help',
-  'repetir comandos': 'help',
-  'repite los comandos': 'help',
+  'que acciones puedo realizar': 'commands',
+  'puedes decirme que acciones puedo realizar': 'commands',
+  'dime que acciones puedo realizar': 'commands',
+  'que comandos puedo usar': 'commands',
+  'cuales son los comandos': 'commands',
+  'cuales eran los comandos': 'commands',
+  'repetir comandos': 'commands',
+  'repite los comandos': 'commands',
   ayuda: 'help',
+  'necesito ayuda': 'help',
 }
 
 function normalizeCommand(text: string) {
@@ -40,8 +51,14 @@ function normalizeCommand(text: string) {
     .replace(/\s+/g, ' ')
 }
 
-function findCommand(text: string): VoiceCommand | undefined {
+function parseCommand(text: string): VoiceCommand | undefined {
   const normalized = normalizeCommand(text)
+  const mode =
+    /^(?:(?:aplica|aplicar|activa|activar|cambia|cambiar|cambiemos|pon|poner|usa|usar|vuelve|volver|regresa|regresar)\s+(?:(?:a|al|el|la)\s+)?)?(?:modo\s+(?:(?:de|a)\s+)?)?(escucha continua|pulsar para hablar)$/.exec(
+      normalized,
+    )
+  if (mode)
+    return mode[1] === 'escucha continua' ? 'continuous' : 'push-to-talk'
   return Object.hasOwn(commands, normalized) ? commands[normalized] : undefined
 }
 
@@ -81,11 +98,11 @@ export function parseVoiceIntent(transcript: string): VoiceIntent {
       .slice(wake[0].length)
       .replace(/^[\s¡¿.,:;!?-]+/, '')
       .trim()
-    const command = findCommand(question)
+    const command = parseCommand(question)
     if (command) return { type: 'command', command }
     return { type: 'wake', question }
   }
 
-  const command = findCommand(spoken)
+  const command = parseCommand(spoken)
   return command ? { type: 'command', command } : null
 }

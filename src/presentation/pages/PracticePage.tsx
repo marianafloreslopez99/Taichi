@@ -3,7 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { useSession } from '../../app/SessionProvider'
 import { voiceServices } from '../../app/services'
-import { playVoiceGuide } from '../../application/voiceGuide'
+import {
+  playVoiceGuide,
+  movementVoiceGuide,
+  type VoiceGuidePosition,
+} from '../../application/voiceGuide'
 import {
   recordVoiceLatency,
   recordVoiceCaptureEvent,
@@ -15,6 +19,11 @@ import {
   routineIntroduction,
   playCommandHelp,
   voiceCommandSections,
+  commandConfirmations,
+  type ConfirmedPracticeCommand,
+  practiceGuidance,
+  commandListIntroduction,
+  type VoiceHelpTopic,
 } from '../../application/practiceInteraction'
 import {
   parseVoiceIntent,
@@ -36,7 +45,10 @@ import { Icon } from '../components/Icon'
 import { MovementVisual } from '../components/MovementVisual'
 import { PracticeControls } from '../components/PracticeControls'
 import { ProgressBar } from '../components/ProgressBar'
-import { VoiceTalkButton } from '../components/VoiceTalkButton'
+import { VoiceMicrophone } from '../components/VoiceMicrophone'
+import { ProgressiveResponse } from '../components/ProgressiveResponse'
+import { VoiceHelpPanel } from '../components/VoiceHelpPanel'
+import { usePracticeGuidance } from '../hooks/usePracticeGuidance'
 
 function formatTime(seconds: number) {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
@@ -55,7 +67,10 @@ const commandNames: Record<VoiceCommand, string> = {
   next: 'Siguiente',
   previous: 'Anterior',
   finish: 'Finalizar',
-  help: 'Escuchar comandos',
+  help: 'Ayuda',
+  commands: 'Escuchar comandos',
+  'push-to-talk': 'Pulsar para hablar',
+  continuous: 'Escucha continua',
 }
 
 function PracticeExperience({
@@ -68,6 +83,14 @@ function PracticeExperience({
   const navigate = useNavigate()
   const actions = useSession()
   const [panelOpen, setPanelOpen] = useState(session.status === 'ASKING')
+  const [helpView, setHelpView] = useState<'welcome' | 'commands' | null>(null)
+  const [helpSpeaking, setHelpSpeaking] = useState(false)
+  const [helpSection, setHelpSection] = useState('')
+  const [helpPlayback, setHelpPlayback] = useState(0)
+  const [helpTopic, setHelpTopic] = useState<VoiceHelpTopic | 'all' | null>(
+    null,
+  )
+  const helpControllerRef = useRef<AbortController | null>(null)
   const [openingQuestion, setOpeningQuestion] = useState(false)
   const [speechError, setSpeechError] = useState(false)
   const [announcement, setAnnouncement] = useState<string | null>(null)
@@ -83,10 +106,12 @@ function PracticeExperience({
   const [voiceNotice, setVoiceNotice] = useState('')
   const [voiceFeedback, setVoiceFeedback] = useState('')
   const [activeCommand, setActiveCommand] = useState<VoiceCommand | null>(null)
+  const [commandPending, setCommandPending] = useState(false)
+  const [commandConfirmation, setCommandConfirmation] =
+    useState<ConfirmedPracticeCommand | null>(null)
   const commandHighlightTimerRef = useRef<number | null>(null)
   const feedbackTimerRef = useRef<number | null>(null)
   const quickPauseRef = useRef<{
-    cueIndex: number
     timer: number
     captureId?: number
     resultIndex?: number
@@ -94,9 +119,14 @@ function PracticeExperience({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const narrationRef = useRef<AbortController | null>(null)
   const pendingPausesRef = useRef(0)
+  const repeatAfterCommandRef = useRef(false)
+  const narrationPositionRef = useRef<
+    | (VoiceGuidePosition & { movementId: string; advanceRequested?: boolean })
+    | null
+  >(null)
+  const narrationCompleteRef = useRef<() => void>(() => {})
   const finishingRef = useRef(false)
   const finishRequestedRef = useRef(false)
-  const finishCueRef = useRef(0)
   const introducedRef = useRef(false)
   const askingRef = useRef(false)
   const closingRef = useRef<Promise<void> | null>(null)
@@ -104,6 +134,13 @@ function PracticeExperience({
   const interimWakeRef = useRef(false)
   const wakeTimerRef = useRef<number | null>(null)
   const assistant = useAIQuestion(routine, session, actions.refresh)
+  const {
+    activeTip,
+    audioError: guidanceAudioError,
+    playTip,
+    clearTip,
+    skipTip,
+  } = usePracticeGuidance()
   const steps = flattenRoutineMovements(routine)
   const step = steps[session.currentMovementIndex]
   const movement = step?.movement
@@ -142,57 +179,124 @@ function PracticeExperience({
     narrationRef.current = null
     voiceServices.tts.stop()
     setAnnouncement(null)
-  }, [])
+    clearTip()
+  }, [clearTip])
 
-  const startNarration = useCallback(
-    (fromIndex = 0) => {
-      if (
-        !movement ||
-        finishingRef.current ||
-        finishRequestedRef.current ||
-        pendingPausesRef.current > 0
+  const startNarration = useCallback(() => {
+    if (
+      !movement ||
+      finishingRef.current ||
+      finishRequestedRef.current ||
+      pendingPausesRef.current > 0
+    )
+      return
+    if (quickPauseRef.current) highlightCommand(null)
+    stopNarration()
+    if (narrationPositionRef.current?.movementId !== movement.id)
+      narrationPositionRef.current = {
+        movementId: movement.id,
+        cueIndex: 0,
+      }
+    const position = narrationPositionRef.current
+    const controller = new AbortController()
+    narrationRef.current = controller
+    setSpeechError(false)
+    void (async () => {
+      if (!introducedRef.current) {
+        const introduction = routineIntroduction(routine.name)
+        setAnnouncement(introduction)
+        await voiceServices.tts.speak(introduction)
+        if (controller.signal.aborted) return
+        introducedRef.current = true
+        setAnnouncement(null)
+      }
+      await playTip('essentials', controller.signal)
+      if (session.currentMovementIndex > 0)
+        await playTip('navigation', controller.signal)
+      if (session.currentMovementIndex === steps.length - 1)
+        await playTip('finish', controller.signal)
+      if (controller.signal.aborted) return
+      await playVoiceGuide(
+        movementVoiceGuide(movement),
+        voiceServices.tts,
+        controller.signal,
+        (_cue, index) => setActiveCue({ movementId: movement.id, index }),
+        position,
       )
-        return
-      if (quickPauseRef.current) highlightCommand(null)
-      stopNarration()
-      const controller = new AbortController()
-      narrationRef.current = controller
-      setSpeechError(false)
-      void (async () => {
-        if (!introducedRef.current) {
-          const introduction = routineIntroduction(routine.name)
-          setAnnouncement(introduction)
-          await voiceServices.tts.speak(introduction)
-          if (controller.signal.aborted) return
-          introducedRef.current = true
-          setAnnouncement(null)
-        }
-        await playVoiceGuide(
-          movement.voiceGuide.slice(fromIndex),
-          voiceServices.tts,
-          controller.signal,
-          (_cue, index) =>
-            setActiveCue({ movementId: movement.id, index: fromIndex + index }),
-        )
-      })().catch(() => {
-        if (!controller.signal.aborted) {
-          introducedRef.current = true
-          setAnnouncement(null)
-          setSpeechError(true)
-        }
-      })
-    },
-    [movement, routine.name, stopNarration, highlightCommand],
-  )
+      if (session.currentMovementIndex < steps.length - 1)
+        await playTip('questions', controller.signal)
+      if (!controller.signal.aborted) narrationCompleteRef.current()
+    })().catch(() => {
+      if (!controller.signal.aborted) {
+        introducedRef.current = true
+        setAnnouncement(null)
+        setSpeechError(true)
+      }
+    })
+  }, [
+    movement,
+    routine.name,
+    stopNarration,
+    highlightCommand,
+    playTip,
+    session.currentMovementIndex,
+    steps.length,
+  ])
 
   useEffect(() => {
-    if (session.status !== 'PLAYING' || quickPauseRef.current) return
+    if (commandPending || helpView) return
+    if (session.status !== 'PLAYING' && !repeatAfterCommandRef.current) return
+    repeatAfterCommandRef.current = false
     startNarration()
     return stopNarration
-  }, [session.status, startNarration, stopNarration])
+  }, [session.status, startNarration, stopNarration, commandPending, helpView])
+
+  useEffect(() => {
+    if (helpView !== 'commands') return
+    const controller = new AbortController()
+    helpControllerRef.current = controller
+    const playback =
+      helpTopic === null
+        ? voiceServices.tts.speak(commandListIntroduction)
+        : playCommandHelp(
+            voiceServices.tts,
+            controller.signal,
+            setHelpSection,
+            helpTopic === 'all' ? undefined : helpTopic,
+          )
+    void playback
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setVoiceNotice(
+            'El audio de ayuda no está disponible. Puedes leer los comandos aquí.',
+          )
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setHelpSpeaking(false)
+          mic.resumeNow()
+        }
+      })
+    return () => controller.abort()
+  }, [helpView, helpPlayback, helpTopic])
+
+  useEffect(() => {
+    if (!finishRequested) return
+    const controller = new AbortController()
+    narrationRef.current = controller
+    void voiceServices.tts
+      .speak(finishConfirmationPrompt)
+      .catch(() => {})
+      .finally(() => {
+        if (!controller.signal.aborted) setFinishPromptSpeaking(false)
+      })
+    return () => controller.abort()
+  }, [finishRequested])
 
   useEffect(
     () => () => {
+      helpControllerRef.current?.abort()
+      voiceServices.tts.stop()
       if (wakeTimerRef.current !== null)
         window.clearTimeout(wakeTimerRef.current)
       if (feedbackTimerRef.current !== null)
@@ -208,6 +312,7 @@ function PracticeExperience({
   const ask = (question?: string, timing?: VoiceRecognitionTiming) => {
     if (
       askingRef.current ||
+      helpView ||
       panelOpen ||
       finishRequestedRef.current ||
       commandPendingRef.current
@@ -265,15 +370,22 @@ function PracticeExperience({
       actionStarted,
       latencyDetails,
     )
+    clearWake()
+    stopNarration()
     highlightCommand(command, 0)
     showVoiceFeedback(`Detecté «${commandNames[command]}». Aplicando…`)
     try {
       if (command === 'pause' && session.status === 'PLAYING') {
         await actions.pause()
-      } else if (command === 'resume' && session.status === 'PAUSED') {
-        await actions.resume()
+      } else if (command === 'resume') {
+        if (helpView) {
+          helpControllerRef.current?.abort()
+          setHelpSpeaking(false)
+          setHelpView(null)
+        }
+        if (session.status === 'PAUSED') await actions.resume()
       } else if (command === 'repeat') {
-        startNarration()
+        repeatAfterCommandRef.current = true
       } else if (command === 'next') {
         if (session.currentMovementIndex === steps.length - 1) {
           requestFinish(true)
@@ -285,12 +397,34 @@ function PracticeExperience({
         requestFinish(true)
         return
       } else if (command === 'previous' && session.currentMovementIndex > 0) {
-        stopNarration()
         await actions.previous()
-      } else if (command === 'help' && pendingPausesRef.current === 0) {
-        await explainCommands(true)
+      } else if (command === 'help') {
+        helpControllerRef.current?.abort()
+        setHelpSpeaking(false)
+        setHelpView('welcome')
+      } else if (command === 'commands') {
+        helpControllerRef.current?.abort()
+        setVoiceNotice('')
+        setHelpSection('')
+        setHelpTopic(null)
+        setHelpSpeaking(true)
+        setHelpPlayback((count) => count + 1)
+        setHelpView('commands')
+      } else if (command === 'push-to-talk' || command === 'continuous') {
+        helpControllerRef.current?.abort()
+        setHelpSpeaking(false)
+        if (!mic.enabled) mic.toggle()
+        mic.setMode(command)
       }
       if (signal.aborted) return
+      if (
+        command === 'repeat' ||
+        command === 'next' ||
+        command === 'previous'
+      ) {
+        narrationPositionRef.current = null
+        setActiveCue(null)
+      }
       recordVoiceLatency(
         command,
         'action',
@@ -300,7 +434,38 @@ function PracticeExperience({
         latencyDetails,
       )
       highlightCommand(command)
-      showVoiceFeedback(`«${commandNames[command]}» realizado.`, 3000)
+      if (command !== 'commands') {
+        const confirmedCommand = command as ConfirmedPracticeCommand
+        const confirmation = commandConfirmations[confirmedCommand]
+        mic.suspendNow()
+        setCommandConfirmation(confirmedCommand)
+        showVoiceFeedback(confirmation)
+        try {
+          await voiceServices.tts.speak(confirmation)
+        } catch {
+          if (!signal.aborted)
+            setVoiceNotice(
+              'No se pudo reproducir la confirmación de voz. Puedes leerla en pantalla.',
+            )
+        }
+        if (signal.aborted) return
+        showVoiceFeedback(confirmation, 5000)
+        if (confirmedCommand === 'push-to-talk')
+          await playTip('push-to-talk', signal)
+        if (confirmedCommand === 'pause') await playTip('questions', signal)
+        if (
+          confirmedCommand === 'push-to-talk' ||
+          confirmedCommand === 'continuous'
+        )
+          setHelpView(null)
+        setCommandConfirmation(null)
+        mic.resumeNow(
+          confirmedCommand === 'push-to-talk' ||
+            confirmedCommand === 'continuous'
+            ? confirmedCommand
+            : undefined,
+        )
+      }
     } catch (error) {
       if (!signal.aborted)
         recordVoiceLatency(
@@ -313,7 +478,9 @@ function PracticeExperience({
         )
       throw error
     } finally {
-      if (command === 'pause') pendingPausesRef.current--
+      if (command === 'pause')
+        pendingPausesRef.current = Math.max(0, pendingPausesRef.current - 1)
+      if (!signal.aborted) setCommandConfirmation(null)
     }
   }
 
@@ -323,18 +490,19 @@ function PracticeExperience({
     }
   }
 
-  const commandQueue = useCommandQueue(executeCommand, () => {
-    discardWaitingCommands()
-    highlightCommand(null)
-    showVoiceFeedback('')
-    setVoiceNotice(
-      'No se pudo ejecutar el comando de voz. Inténtalo de nuevo. Se descartaron los comandos pendientes; repítelos.',
-    )
-    if (session.status === 'PLAYING')
-      startNarration(
-        activeCue?.movementId === movement?.id ? (activeCue?.index ?? 0) : 0,
+  const commandQueue = useCommandQueue(
+    executeCommand,
+    () => {
+      discardWaitingCommands()
+      highlightCommand(null)
+      showVoiceFeedback('')
+      setVoiceNotice(
+        'No se pudo ejecutar el comando de voz. Inténtalo de nuevo. Se descartaron los comandos pendientes; repítelos.',
       )
-  })
+      if (session.status === 'PLAYING') startNarration()
+    },
+    setCommandPending,
+  )
   const commandPendingRef = commandQueue.pendingRef
 
   const runCommand = (
@@ -415,6 +583,19 @@ function PracticeExperience({
     transcript: string,
     timing?: VoiceRecognitionTiming,
   ) => {
+    if (helpSpeaking || activeTip) return
+    if (helpView) {
+      const intent = parseVoiceIntent(transcript)
+      if (
+        intent?.type === 'command' &&
+        ['help', 'commands', 'push-to-talk', 'continuous', 'resume'].includes(
+          intent.command,
+        )
+      )
+        runCommand(intent.command, timing)
+      else if (parseFinishConfirmation(transcript) === 'cancel') closeHelp()
+      return
+    }
     const quickPause = quickPauseRef.current
     if (quickPause) {
       window.clearTimeout(quickPause.timer)
@@ -426,11 +607,18 @@ function PracticeExperience({
         const takesOver =
           intent?.type === 'wake' ||
           (intent?.type === 'command' &&
-            (['repeat', 'next', 'finish', 'help'].includes(intent.command) ||
+            ([
+              'repeat',
+              'next',
+              'finish',
+              'help',
+              'commands',
+              'push-to-talk',
+              'continuous',
+            ].includes(intent.command) ||
               (intent.command === 'previous' &&
                 session.currentMovementIndex > 0)))
-        if (session.status === 'PLAYING' && !takesOver)
-          startNarration(quickPause.cueIndex)
+        if (session.status === 'PLAYING' && !takesOver) startNarration()
       }
     }
     if (finishRequestedRef.current) {
@@ -512,7 +700,7 @@ function PracticeExperience({
     transcript: string,
     timing?: VoiceRecognitionTiming,
   ) => {
-    if (finishRequestedRef.current) return
+    if (finishRequestedRef.current || helpView || activeTip) return
     if (panelOpen || openingQuestion || session.status === 'ASKING') return
     if (announcement) return
     const intent = parseVoiceIntent(transcript)
@@ -529,8 +717,6 @@ function PracticeExperience({
       !interimWakeRef.current
     ) {
       if (quickPauseRef.current) return
-      const cueIndex =
-        activeCue?.movementId === movement?.id ? (activeCue?.index ?? 0) : 0
       const detectedAt = timing?.receivedAt ?? performance.now()
       stopNarration()
       highlightCommand('pause', 0)
@@ -548,7 +734,6 @@ function PracticeExperience({
       )
       showVoiceFeedback('Detecté «Pausar». Confirmando…')
       quickPauseRef.current = {
-        cueIndex,
         captureId: timing?.captureId,
         resultIndex: timing?.resultIndex,
         timer: window.setTimeout(() => {
@@ -558,14 +743,13 @@ function PracticeExperience({
             'No se confirmó la pausa. Puedes pulsar Pausar.',
             4000,
           )
-          startNarration(cueIndex)
+          startNarration()
         }, 4000),
       }
       return
     }
     if (quickPauseRef.current) {
-      const cueIndex = quickPauseRef.current.cueIndex
-      startNarration(cueIndex)
+      startNarration()
       showVoiceFeedback('La pausa no se confirmó. Retomando la guía.', 3000)
     }
     if (intent?.type !== 'wake') return
@@ -580,13 +764,16 @@ function PracticeExperience({
   }
 
   const mic = useContinuousVoiceControl(
-    finishRequested
-      ? !finishPromptSpeaking && !finishPending
-      : !announcement &&
+    !commandConfirmation &&
+      !activeTip &&
+      !helpSpeaking &&
+      (finishRequested
+        ? !finishPromptSpeaking && !finishPending
+        : !announcement &&
           ((!panelOpen && !openingQuestion && session.status !== 'ASKING') ||
             (panelOpen &&
               (assistant.state.status === 'COMPLETED' ||
-                assistant.state.status === 'ERROR'))),
+                assistant.state.status === 'ERROR')))),
     handleVoicePhrase,
     handleInterimPhrase,
   )
@@ -597,30 +784,19 @@ function PracticeExperience({
       finishingRef.current ||
       (!fromQueue && commandPendingRef.current) ||
       panelOpen ||
+      helpView ||
       openingQuestion ||
       session.status === 'ASKING'
     )
       return
     finishRequestedRef.current = true
     discardWaitingCommands()
-    finishCueRef.current =
-      activeCue && activeCue.movementId === movement?.id ? activeCue.index : 0
     clearWake()
     stopNarration()
     mic.suspendNow()
     setFinishError('')
     setFinishRequested(true)
     setFinishPromptSpeaking(true)
-    const controller = new AbortController()
-    narrationRef.current = controller
-    void voiceServices.tts
-      .speak(finishConfirmationPrompt)
-      .then(() => {
-        if (!controller.signal.aborted) setFinishPromptSpeaking(false)
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setFinishPromptSpeaking(false)
-      })
   }
 
   const cancelFinish = () => {
@@ -630,7 +806,7 @@ function PracticeExperience({
     setFinishRequested(false)
     setFinishPromptSpeaking(false)
     setFinishError('')
-    if (session.status === 'PLAYING') startNarration(finishCueRef.current)
+    if (session.status === 'PLAYING') startNarration()
   }
 
   const confirmFinish = (timing?: VoiceRecognitionTiming) => {
@@ -675,44 +851,56 @@ function PracticeExperience({
       .finally(() => setFinishPending(false))
   }
 
-  const explainCommands = (fromQueue = false) => {
+  narrationCompleteRef.current = () => {
+    if (
+      session.status !== 'PLAYING' ||
+      commandPendingRef.current ||
+      panelOpen ||
+      openingQuestion ||
+      helpView ||
+      finishRequestedRef.current ||
+      finishingRef.current
+    )
+      return
+    const position = narrationPositionRef.current
+    if (!position || position.advanceRequested) return
+    position.advanceRequested = true
+    if (session.currentMovementIndex === steps.length - 1) requestFinish()
+    else runCommand('next')
+  }
+
+  const explainCommands = (topic: VoiceHelpTopic | 'all' | null = null) => {
     if (
       panelOpen ||
       openingQuestion ||
       session.status === 'ASKING' ||
       finishRequestedRef.current ||
       finishingRef.current ||
-      (!fromQueue && commandPendingRef.current)
+      commandPendingRef.current
     )
       return
-    highlightCommand('help')
-    const fromIndex =
-      activeCue && activeCue.movementId === movement?.id ? activeCue.index : 0
-    const wasPlaying = session.status === 'PLAYING'
+    highlightCommand('commands')
     clearWake()
     stopNarration()
     mic.suspendNow()
-    introducedRef.current = true
-    const controller = new AbortController()
-    narrationRef.current = controller
-    setSpeechError(false)
-    return playCommandHelp(
-      voiceServices.tts,
-      controller.signal,
-      setAnnouncement,
-    )
-      .then(() => {
-        if (controller.signal.aborted) return
-        setAnnouncement(null)
-        if (wasPlaying) startNarration(fromIndex)
-      })
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted) {
-          setAnnouncement(null)
-          setSpeechError(true)
-          throw error
-        }
-      })
+    helpControllerRef.current?.abort()
+    setVoiceNotice('')
+    showVoiceFeedback('')
+    setHelpSection('')
+    setHelpTopic(topic)
+    setHelpSpeaking(true)
+    setHelpPlayback((count) => count + 1)
+    setHelpView('commands')
+  }
+
+  const closeHelp = () => {
+    helpControllerRef.current?.abort()
+    commandQueue.cancelAll()
+    stopNarration()
+    setCommandConfirmation(null)
+    setHelpSpeaking(false)
+    setHelpView(null)
+    mic.resumeNow()
   }
 
   const questionInProgress =
@@ -809,16 +997,16 @@ function PracticeExperience({
     return closing
   }
   const continueRoutine = async () => {
+    setVoiceNotice('')
     await closePanel()
-    try {
-      await actions.resume()
-    } catch {
-      await actions
-        .refresh()
-        .catch(() =>
-          setVoiceNotice('No se pudo reanudar la rutina. Inténtalo de nuevo.'),
-        )
-    }
+    const accepted = commandQueue.enqueue({
+      command: 'resume',
+      detectedAt: performance.now(),
+    })
+    if (!accepted)
+      setVoiceNotice(
+        'Hay demasiados comandos pendientes. Espera un momento e inténtalo de nuevo.',
+      )
   }
   const abandon = () => {
     if (
@@ -826,6 +1014,7 @@ function PracticeExperience({
         '¿Quieres abandonar esta práctica? Tu progreso actual se perderá.',
       )
     ) {
+      commandQueue.cancelAll()
       stopNarration()
       actions.clear()
       navigate('/rutinas')
@@ -834,7 +1023,7 @@ function PracticeExperience({
   return (
     <>
       <div
-        inert={finishRequested}
+        inert={finishRequested || Boolean(helpView)}
         className={`practice-page container${panelOpen || openingQuestion || session.status === 'ASKING' ? ' practice-page--asking' : ''}`}
       >
         <div className="practice-top">
@@ -854,104 +1043,104 @@ function PracticeExperience({
           className={`voice-console voice-console--${micPresentation.mode}`}
           aria-label="Estado del control por voz"
         >
-          <div className="voice-console-icon" aria-hidden="true">
-            <Icon name="mic" />
-            <span className="voice-console-signal">
-              <i />
-              <i />
-              <i />
-            </span>
-          </div>
-          <div className="voice-console-copy" role="status" aria-live="polite">
-            <span className="voice-console-eyebrow">
-              {micPresentation.eyebrow}
-            </span>
-            <strong>{micPresentation.title}</strong>
-            <p>{micPresentation.detail}</p>
-          </div>
-          {!questionInProgress && mic.status !== 'unsupported' && (
-            <div className="voice-console-actions">
-              <label className="voice-mode">
-                Modo de voz
-                <select
-                  aria-label="Modo de voz"
-                  value={mic.mode}
-                  onChange={(event) => {
-                    if (quickPauseRef.current)
-                      startNarration(quickPauseRef.current.cueIndex)
-                    if (waitingForQuestion && session.status === 'PLAYING')
-                      startNarration()
-                    clearWake()
-                    mic.setMode(
-                      event.target.value as 'continuous' | 'push-to-talk',
-                    )
-                  }}
-                >
-                  <option value="continuous">Escucha continua</option>
-                  <option value="push-to-talk">Pulsar para hablar</option>
-                </select>
-              </label>
-              <div className="voice-console-buttons">
-                {mic.status === 'blocked' ? (
-                  <button className="voice-console-toggle" onClick={mic.retry}>
-                    Reintentar
-                  </button>
-                ) : (
-                  <button
-                    className="voice-console-toggle"
-                    onClick={() => {
-                      if (quickPauseRef.current)
-                        startNarration(quickPauseRef.current.cueIndex)
-                      if (waitingForQuestion && session.status === 'PLAYING')
-                        startNarration()
-                      clearWake()
-                      mic.toggle()
-                    }}
-                    aria-label={
-                      mic.enabled ? 'Apagar micrófono' : 'Activar micrófono'
-                    }
-                  >
-                    {mic.enabled ? 'Apagar micrófono' : 'Activar micrófono'}
-                  </button>
-                )}
-                <button
-                  className={`voice-console-toggle${activeCommand === 'help' ? ' voice-console-toggle--active' : ''}`}
-                  onClick={() => runCommand('help')}
-                >
-                  Escuchar comandos
-                </button>
-                {mic.mode === 'push-to-talk' && (
-                  <VoiceTalkButton
-                    available={mic.available}
-                    capturing={mic.capturing}
-                    onTalk={mic.talk}
-                  />
-                )}
-              </div>
-              {mic.status === 'listening' && (
-                <span className="voice-console-hint">
-                  Pausar · Repetir · Siguiente · Finalizar
-                </span>
+          <VoiceMicrophone
+            speaking={
+              assistant.state.status === 'SPEAKING' ||
+              Boolean(commandConfirmation) ||
+              Boolean(activeTip)
+            }
+            listening={mic.status === 'listening'}
+            enabled={mic.mode === 'push-to-talk' ? mic.capturing : mic.enabled}
+            disabled={
+              commandPending ||
+              questionInProgress ||
+              mic.status === 'unsupported'
+            }
+            label={
+              mic.status === 'blocked'
+                ? 'Reintentar micrófono'
+                : mic.mode === 'push-to-talk' && mic.enabled
+                  ? mic.capturing
+                    ? 'Terminar escucha'
+                    : 'Pulsar para hablar'
+                  : mic.enabled
+                    ? 'Apagar micrófono'
+                    : 'Activar micrófono'
+            }
+            onClick={() => {
+              if (mic.status === 'blocked') {
+                mic.retry()
+                return
+              }
+              if (mic.mode === 'push-to-talk' && mic.enabled) {
+                mic.talk()
+                return
+              }
+              if (quickPauseRef.current) startNarration()
+              if (waitingForQuestion && session.status === 'PLAYING')
+                startNarration()
+              clearWake()
+              mic.toggle()
+            }}
+          />
+          <div
+            className="voice-console-copy"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <div className="voice-console-meta">
+              <span className="voice-console-eyebrow">
+                {assistant.state.answer
+                  ? 'RESPUESTA DE IA'
+                  : micPresentation.eyebrow}
+              </span>
+              <button
+                type="button"
+                className="voice-help-trigger"
+                aria-haspopup="dialog"
+                aria-label="Ayuda"
+                disabled={
+                  commandPending || questionInProgress || finishRequested
+                }
+                onClick={() => runCommand('help')}
+              >
+                Ayuda <Icon name="menu" />
+              </button>
+            </div>
+            <div className="voice-console-headline">
+              <strong>
+                {activeTip
+                  ? practiceGuidance[activeTip].title
+                  : assistant.state.status === 'SPEAKING'
+                    ? 'IA respondiendo…'
+                    : micPresentation.title}
+              </strong>
+              {voiceFeedback && !helpView && (
+                <strong className="voice-command-feedback">
+                  {voiceFeedback}
+                </strong>
               )}
             </div>
+            {activeTip ? (
+              <div className="voice-guidance-tip">
+                <p>{practiceGuidance[activeTip].text}</p>
+                <button className="button button--quiet" onClick={skipTip}>
+                  Omitir explicación
+                </button>
+              </div>
+            ) : (
+              !assistant.state.answer &&
+              !voiceFeedback && <p>{micPresentation.detail}</p>
+            )}
+          </div>
+          {assistant.state.answer && (
+            <ProgressiveResponse
+              text={assistant.state.answer}
+              speaking={assistant.state.status === 'SPEAKING'}
+            />
           )}
         </section>
-        {!questionInProgress && (
-          <div className="voice-help">
-            <p>
-              {mic.mode === 'push-to-talk' ? 'Pulsa para hablar y di' : 'Di'}{' '}
-              «¿Qué acciones puedo realizar?» para recordar los comandos.
-            </p>
-            <details>
-              <summary>Ver comandos</summary>
-              <ul>
-                {voiceCommandSections.map((text) => (
-                  <li key={text}>{text}</li>
-                ))}
-              </ul>
-            </details>
-          </div>
-        )}
         <div className="practice-main">
           <div className="practice-art">
             <span className="practice-art-label">
@@ -976,13 +1165,17 @@ function PracticeExperience({
             <div className="instruction-card">
               <span>
                 <Icon name="sound" />{' '}
-                {announcement
+                {announcement && !activeTip
                   ? voiceCommandSections.includes(announcement)
                     ? 'COMANDOS DE VOZ'
                     : 'TU RUTINA'
                   : 'GUÍA DE ESTE MOVIMIENTO'}
               </span>
-              <p>{announcement ?? cue?.text ?? movement.instruction}</p>
+              <p>
+                {(!activeTip && announcement) ||
+                  cue?.text ||
+                  movement.instruction}
+              </p>
             </div>
             <div className="practice-bottom-meta">
               <div>
@@ -1004,19 +1197,11 @@ function PracticeExperience({
                 {session.status === 'PAUSED' ? 'En pausa' : 'En movimiento'}
               </div>
             </div>
-            {speechError && (
+            {(speechError || guidanceAudioError) && (
               <p className="notice" role="status">
                 El audio no está disponible. Sigue la instrucción escrita.
               </p>
             )}
-            <p
-              className="voice-command-feedback"
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              {voiceFeedback}
-            </p>
             {voiceNotice && (
               <p className="notice notice--error" role="alert">
                 {voiceNotice}
@@ -1069,6 +1254,31 @@ function PracticeExperience({
           />
         )}
       </div>
+      {helpView && (
+        <VoiceHelpPanel
+          view={helpView}
+          speaking={helpSpeaking || commandPending}
+          busy={commandPending}
+          feedback={voiceFeedback}
+          section={helpSection}
+          error={voiceNotice}
+          mode={mic.mode}
+          listening={mic.status === 'listening'}
+          capturing={mic.capturing}
+          available={mic.available}
+          onTalk={mic.talk}
+          onClose={closeHelp}
+          onCommands={() => explainCommands()}
+          onTopic={explainCommands}
+          onStop={() => {
+            helpControllerRef.current?.abort()
+            voiceServices.tts.stop()
+            setHelpSpeaking(false)
+          }}
+          onMode={(mode) => runCommand(mode)}
+          onContinue={() => runCommand('resume')}
+        />
+      )}
       {finishRequested && (
         <FinishConfirmation
           pending={finishPending}

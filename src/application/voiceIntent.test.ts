@@ -27,10 +27,26 @@ describe('parseVoiceIntent', () => {
     ['Finalizar', 'finish'],
     ['Finalizar rutina.', 'finish'],
     ['Finalizar práctica', 'finish'],
-    ['¿Qué acciones puedo realizar?', 'help'],
-    ['Puedes decirme qué acciones puedo realizar', 'help'],
-    ['Repetir comandos', 'help'],
-    ['Oye, ¿qué comandos puedo usar?', 'help'],
+    ['¿Qué acciones puedo realizar?', 'commands'],
+    ['Puedes decirme qué acciones puedo realizar', 'commands'],
+    ['Repetir comandos', 'commands'],
+    ['Oye, ¿qué comandos puedo usar?', 'commands'],
+    ['Ayuda', 'help'],
+    ['Necesito ayuda', 'help'],
+    ['¿Cuáles eran los comandos?', 'commands'],
+    ['Aplica el modo Pulsar para hablar', 'push-to-talk'],
+    ['Oye, aplica el modo Pulsar para hablar.', 'push-to-talk'],
+    ['Aplica el modo Escucha continua', 'continuous'],
+    ['Cambia a escucha continua', 'continuous'],
+    ['Cambiar escucha continua', 'continuous'],
+    ['Activa escucha continua', 'continuous'],
+    ['Activa la escucha continua.', 'continuous'],
+    ['Cambia el modo a escucha continua', 'continuous'],
+    ['Oye, cambia a modo escucha continua', 'continuous'],
+    ['Modo escucha continua', 'continuous'],
+    ['Usar escucha continua', 'continuous'],
+    ['Cambia a pulsar para hablar', 'push-to-talk'],
+    ['Aplica  el modo  escucha continua', 'continuous'],
   ] as const)('recognizes the isolated command %s', (transcript, command) => {
     expect(parseVoiceIntent(transcript)).toEqual({ type: 'command', command })
   })
@@ -43,7 +59,7 @@ describe('parseVoiceIntent', () => {
     ['Tengo   una duda: siguiente', 'next'],
     ['Oye, anterior', 'previous'],
     ['Oye, finalizar práctica', 'finish'],
-    ['Tengo una duda, repetir comandos', 'help'],
+    ['Tengo una duda, repetir comandos', 'commands'],
   ] as const)(
     'routes the complete command after activation: %s',
     (text, command) => {
@@ -69,6 +85,11 @@ describe('parseVoiceIntent', () => {
     expect(parseVoiceIntent('La siguiente postura')).toBeNull()
     expect(parseVoiceIntent('pausaremos')).toBeNull()
     expect(parseVoiceIntent('Vamos a finalizar después')).toBeNull()
+    expect(parseVoiceIntent('Mi vecino necesita ayuda')).toBeNull()
+    expect(parseVoiceIntent('Después cambia a escucha continua')).toBeNull()
+    expect(
+      parseVoiceIntent('Después aplica el modo Pulsar para hablar'),
+    ).toBeNull()
     expect(
       parseVoiceIntent('Me pregunto qué acciones puedo realizar mañana'),
     ).toBeNull()
